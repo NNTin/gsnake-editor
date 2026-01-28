@@ -51,3 +51,34 @@ npm run check    # Run TypeScript type checking
 
 [VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
 
+## CI/CD
+
+This submodule has its own GitHub Actions workflow at `.github/workflows/ci.yml` to validate standalone builds.
+
+### Testing CI Locally with nektos/act
+
+You can test the CI workflow locally using [nektos/act](https://github.com/nektos/act):
+
+```bash
+# Install act (if not already installed)
+# Ubuntu/Debian: sudo apt install act
+# macOS: brew install act
+
+# Test the build job
+cd gsnake-editor
+act -j build
+
+# Test the typecheck job
+act -j typecheck
+
+# List all available jobs
+act -l
+```
+
+**Note:** act requires Docker and uses it to simulate GitHub Actions runners. On first run, it will prompt you to select a Docker image size (recommend the medium image: `ghcr.io/catthehacker/ubuntu:act-latest`).
+
+**Known Limitations:**
+- Cache actions may not work exactly as on GitHub Actions
+- `workflow_dispatch` trigger cannot be tested locally with act
+- Network operations may behave differently than on actual GitHub runners
+
