@@ -603,7 +603,9 @@
       console.log('Test level stored:', result);
 
       // Open gsnake-web in new tab with test mode parameter
-      window.open('http://localhost:3000?test=true', '_blank');
+      // Use environment variable or default to localhost:3000
+      const webUrl = import.meta.env.VITE_GSNAKE_WEB_URL || 'http://localhost:3000';
+      window.open(`${webUrl}?test=true`, '_blank');
 
       toast.success('Test level uploaded successfully! Opening game in new tab...', {
         duration: 5000,
