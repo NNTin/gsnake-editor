@@ -16,6 +16,30 @@ Create a `.env` file in the gsnake-editor directory to customize (see `.env.exam
 VITE_GSNAKE_WEB_URL=http://localhost:3000
 ```
 
+## Standalone Build
+
+This editor can build independently without requiring `gsnake-web` as a sibling repository.
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- A running gsnake-web instance (for integration testing)
+
+### Installation
+
+```bash
+npm install
+```
+
+### Building
+
+```bash
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run check    # Run TypeScript type checking and linting
+npm test         # Run unit tests
+```
+
 ## Getting Started
 
 ### Development
@@ -39,17 +63,100 @@ npm run dev:editor  # Start only the editor UI (Vite)
 npm run dev:server  # Start only the backend server
 ```
 
-### Other Commands
+## Testing
+
+### Unit Tests
+
+Unit tests verify core functionality and can run independently:
 
 ```bash
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run check    # Run TypeScript type checking
+npm test           # Run all tests once
+npm run test:watch # Run tests in watch mode
+npm run test:ui    # Open Vitest UI
 ```
+
+### Integration Tests
+
+To test the editor against gsnake-web, you need a running gsnake-web instance:
+
+**Option 1: Run gsnake-web locally**
+```bash
+# In the gsnake-web directory (if working in root repo)
+cd ../gsnake-web
+npm install
+npm run dev  # Starts on http://localhost:3000
+
+# Then run editor tests
+cd ../gsnake-editor
+npm test
+```
+
+**Option 2: Set VITE_GSNAKE_WEB_URL to point to a remote instance**
+```bash
+VITE_GSNAKE_WEB_URL=https://gsnake.example.com npm test
+```
+
+If gsnake-web is unreachable, integration tests will be skipped with a warning message. Unit tests will still run and pass.
 
 ## Recommended IDE Setup
 
 [VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+
+## Troubleshooting
+
+### Integration tests are skipped
+
+**Problem:** Integration tests show "gsnake-web is not reachable, skipping integration tests" warning.
+
+**Cause:** The gsnake-web service is not running or not accessible at VITE_GSNAKE_WEB_URL.
+
+**Solution:**
+- Start gsnake-web locally: `cd ../gsnake-web && npm run dev`
+- Or set VITE_GSNAKE_WEB_URL to point to a running instance
+- Or skip integration tests and only run unit tests (unit tests will still pass)
+
+### Build fails with module resolution errors
+
+**Problem:** TypeScript cannot find type definitions or modules.
+
+**Cause:** Dependencies not installed or incorrect Node.js version.
+
+**Solution:**
+```bash
+# Ensure Node.js 18+ is installed
+node --version
+
+# Clean install dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Development server won't start
+
+**Problem:** `npm run dev` fails with port already in use.
+
+**Cause:** Another process is using port 5173 or 3000.
+
+**Solution:**
+```bash
+# Find and kill process using the port
+# On Linux/macOS:
+lsof -ti:5173 | xargs kill
+lsof -ti:3000 | xargs kill
+
+# Or change the port in vite.config.ts or server.ts
+```
+
+### Type checking fails
+
+**Problem:** `npm run check` reports type errors.
+
+**Cause:** TypeScript configuration or code issues.
+
+**Solution:**
+- Check that all dependencies are installed: `npm install`
+- Verify TypeScript version matches project requirements
+- Review the specific error messages and fix type issues in your code
 
 ## CI/CD
 
