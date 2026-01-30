@@ -73,10 +73,19 @@ app.get('/api/test-level', (req, res) => {
   res.json(testLevel.data);
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Test level server running on http://localhost:${PORT}`);
-  console.log('Endpoints:');
-  console.log(`  POST http://localhost:${PORT}/api/test-level`);
-  console.log(`  GET  http://localhost:${PORT}/api/test-level`);
-});
+// Export app for testing
+export { app };
+
+// Start the server only when run directly (not when imported for testing)
+// Check if this module is the main entry point
+const isMainModule = import.meta.url.endsWith(process.argv[1]) ||
+                     import.meta.url === `file://${process.argv[1]}`;
+
+if (isMainModule) {
+  app.listen(PORT, () => {
+    console.log(`Test level server running on http://localhost:${PORT}`);
+    console.log('Endpoints:');
+    console.log(`  POST http://localhost:${PORT}/api/test-level`);
+    console.log(`  GET  http://localhost:${PORT}/api/test-level`);
+  });
+}
