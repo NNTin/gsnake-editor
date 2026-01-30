@@ -4,7 +4,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 export default defineConfig({
   plugins: [svelte({ hot: !process.env.VITEST })],
   test: {
-    environment: 'happy-dom',
+    environment: 'jsdom',
     globals: true,
     coverage: {
       provider: 'v8',
