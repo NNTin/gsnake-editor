@@ -82,7 +82,7 @@ const isMainModule = import.meta.url.endsWith(process.argv[1]) ||
                      import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Test level server running on http://localhost:${PORT}`);
     console.log('Endpoints:');
     console.log(`  POST http://localhost:${PORT}/api/test-level`);
