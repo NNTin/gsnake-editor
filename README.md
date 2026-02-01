@@ -51,8 +51,8 @@ npm run dev
 ```
 
 This will start:
-- Editor UI on http://localhost:5173
-- Backend server on http://localhost:3000
+- Editor UI on http://localhost:3003
+- Backend server on http://localhost:3001
 
 ### Individual Commands
 
@@ -135,14 +135,14 @@ npm install
 
 **Problem:** `npm run dev` fails with port already in use.
 
-**Cause:** Another process is using port 5173 or 3000.
+**Cause:** Another process is using port 3003 or 3001.
 
 **Solution:**
 ```bash
 # Find and kill process using the port
 # On Linux/macOS:
-lsof -ti:5173 | xargs kill
-lsof -ti:3000 | xargs kill
+lsof -ti:3003 | xargs kill
+lsof -ti:3001 | xargs kill
 
 # Or change the port in vite.config.ts or server.ts
 ```
