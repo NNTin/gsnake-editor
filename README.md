@@ -12,6 +12,7 @@ A level editor for creating custom gSnake levels, built with Svelte + TypeScript
   - Example: `VITE_GSNAKE_WEB_URL=https://gsnake.example.com npm run dev`
 
 Create a `.env` file in the gsnake-editor directory to customize (see `.env.example`):
+
 ```bash
 VITE_GSNAKE_WEB_URL=http://localhost:3000
 ```
@@ -51,6 +52,7 @@ npm run dev
 ```
 
 This will start:
+
 - Editor UI on http://localhost:3003
 - Backend server on http://localhost:3001
 
@@ -80,6 +82,7 @@ npm run test:ui    # Open Vitest UI
 To test the editor against gsnake-web, you need a running gsnake-web instance:
 
 **Option 1: Run gsnake-web locally**
+
 ```bash
 # In the gsnake-web directory (if working in root repo)
 cd ../gsnake-web
@@ -92,6 +95,7 @@ npm test
 ```
 
 **Option 2: Set VITE_GSNAKE_WEB_URL to point to a remote instance**
+
 ```bash
 VITE_GSNAKE_WEB_URL=https://gsnake.example.com npm test
 ```
@@ -111,6 +115,7 @@ If gsnake-web is unreachable, integration tests will be skipped with a warning m
 **Cause:** The gsnake-web service is not running or not accessible at VITE_GSNAKE_WEB_URL.
 
 **Solution:**
+
 - Start gsnake-web locally: `cd ../gsnake-web && npm run dev`
 - Or set VITE_GSNAKE_WEB_URL to point to a running instance
 - Or skip integration tests and only run unit tests (unit tests will still pass)
@@ -122,6 +127,7 @@ If gsnake-web is unreachable, integration tests will be skipped with a warning m
 **Cause:** Dependencies not installed or incorrect Node.js version.
 
 **Solution:**
+
 ```bash
 # Ensure Node.js 18+ is installed
 node --version
@@ -138,6 +144,7 @@ npm install
 **Cause:** Another process is using port 3003 or 3001.
 
 **Solution:**
+
 ```bash
 # Find and kill process using the port
 # On Linux/macOS:
@@ -154,6 +161,7 @@ lsof -ti:3001 | xargs kill
 **Cause:** TypeScript configuration or code issues.
 
 **Solution:**
+
 - Check that all dependencies are installed: `npm install`
 - Verify TypeScript version matches project requirements
 - Review the specific error messages and fix type issues in your code
@@ -185,7 +193,7 @@ act -l
 **Note:** act requires Docker and uses it to simulate GitHub Actions runners. On first run, it will prompt you to select a Docker image size (recommend the medium image: `ghcr.io/catthehacker/ubuntu:act-latest`).
 
 **Known Limitations:**
+
 - Cache actions may not work exactly as on GitHub Actions
 - `workflow_dispatch` trigger cannot be tested locally with act
 - Network operations may behave differently than on actual GitHub runners
-

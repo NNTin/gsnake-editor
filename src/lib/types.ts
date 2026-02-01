@@ -1,14 +1,14 @@
 export type EntityType =
-  | 'snake'
-  | 'obstacle'
-  | 'food'
-  | 'exit'
-  | 'stone'
-  | 'spike'
-  | 'floating-food'
-  | 'falling-food';
+  | "snake"
+  | "obstacle"
+  | "food"
+  | "exit"
+  | "stone"
+  | "spike"
+  | "floating-food"
+  | "falling-food";
 
-export type Direction = 'north' | 'south' | 'east' | 'west';
+export type Direction = "north" | "south" | "east" | "west";
 
 export interface Entity {
   type: EntityType;

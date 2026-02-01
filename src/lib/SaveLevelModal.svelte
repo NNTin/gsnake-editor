@@ -89,7 +89,7 @@
         <div class="warning-content">
           <strong>Validation Warnings:</strong>
           <ul>
-            {#each warnings as warning}
+            {#each warnings as warning (warning)}
               <li>{warning}</li>
             {/each}
           </ul>

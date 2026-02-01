@@ -50,7 +50,7 @@
 </script>
 
 <div class="entity-palette">
-  {#each entities as entity}
+  {#each entities as entity (entity.type)}
     <button
       class="entity-item"
       class:selected={selectedEntity === entity.type}

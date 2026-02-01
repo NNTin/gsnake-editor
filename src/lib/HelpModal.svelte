@@ -34,7 +34,7 @@
     <p class="description">Use these shortcuts to work more efficiently</p>
 
     <div class="shortcuts-list">
-      {#each shortcuts as shortcut}
+      {#each shortcuts as shortcut (shortcut.keys)}
         <div class="shortcut-item">
           <kbd class="shortcut-keys">{shortcut.keys}</kbd>
           <span class="shortcut-description">{shortcut.description}</span>

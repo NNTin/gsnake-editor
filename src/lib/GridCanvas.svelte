@@ -88,8 +88,8 @@
       grid-template-columns: repeat({gridWidth}, {CELL_SIZE}px);
     "
   >
-    {#each cells as row}
-      {#each row as cell}
+    {#each cells as row, rowIndex (rowIndex)}
+      {#each row as cell (`${cell.row}-${cell.col}`)}
         <div
           class="cell"
           class:has-entity={cell.entity !== null}
