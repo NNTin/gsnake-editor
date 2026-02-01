@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import toast from 'svelte-5-french-toast';
 
   const dispatch = createEventDispatcher<{
     cancel: void;
@@ -16,7 +17,10 @@
   function handleCreate() {
     // Validate inputs
     if (width < 5 || width > 50 || height < 5 || height > 50) {
-      alert('Width and height must be between 5 and 50');
+      toast.error('Width and height must be between 5 and 50', {
+        duration: 5000,
+        style: 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
+      });
       return;
     }
 
