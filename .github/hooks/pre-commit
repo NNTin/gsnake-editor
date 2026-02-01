@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+# Pre-commit hook for gsnake-editor
+# Runs format, lint, typecheck, and build checks without tests for speed
+
+echo "Running pre-commit checks for gsnake-editor..."
+
+# Check code formatting with prettier
+echo "Checking formatting..."
+npm run format:check
+
+# Run linter
+echo "Running linter..."
+npm run lint
+
+# Run typecheck with svelte-check
+echo "Running typecheck..."
+npm run check
+
+# Run build without tests
+echo "Running build..."
+npm run build
+
+echo "✓ All pre-commit checks passed!"
