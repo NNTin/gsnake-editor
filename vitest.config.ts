@@ -8,7 +8,17 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json-summary", "json", "html", "lcov"],
+      reportsDirectory: "coverage",
+      all: true,
+      include: ["server.ts", "src/**/*.ts"],
+      exclude: ["src/tests/**", "**/*.test.ts", "**/*.d.ts"],
+      thresholds: {
+        lines: 60,
+        statements: 60,
+        functions: 75,
+        branches: 40,
+      },
     },
   },
   resolve: {
