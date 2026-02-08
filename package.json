@@ -16,6 +16,7 @@
     "server": "tsx server.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "coverage": "npm run test:coverage",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },

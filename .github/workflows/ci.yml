@@ -173,7 +173,7 @@ jobs:
         working-directory: ${{ env.EDITOR_DIR }}
 
       - name: Run coverage
-        run: npm run test:coverage
+        run: npm run coverage
         working-directory: ${{ env.EDITOR_DIR }}
 
       - name: Upload coverage artifact

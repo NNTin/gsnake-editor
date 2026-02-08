@@ -73,9 +73,12 @@ Unit tests verify core functionality and can run independently:
 
 ```bash
 npm test           # Run all tests once
+npm run coverage   # Run tests with coverage report
 npm run test:watch # Run tests in watch mode
 npm run test:ui    # Open Vitest UI
 ```
+
+Coverage artifacts are written to `coverage/`.
 
 ### Integration Tests
 
