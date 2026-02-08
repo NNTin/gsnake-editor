@@ -24,6 +24,9 @@
       const data = JSON.parse(text) as LevelData;
 
       // Validate required fields
+      if (!Number.isInteger(data.id) || data.id < 0 || data.id > 4294967295) {
+        throw new Error('Invalid level format: id must be a uint32 number');
+      }
       if (!data.gridSize || typeof data.gridSize.width !== 'number' || typeof data.gridSize.height !== 'number') {
         throw new Error('Invalid level format: missing or invalid gridSize');
       }

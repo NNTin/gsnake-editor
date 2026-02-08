@@ -30,6 +30,7 @@ export interface Position {
 }
 
 export interface LevelData {
+  // Must stay within Rust u32 range for gsnake-core compatibility.
   id: number;
   name: string;
   gridSize: {

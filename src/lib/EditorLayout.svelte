@@ -422,6 +422,9 @@
         const data = JSON.parse(text) as LevelData;
 
         // Validate required fields
+        if (!Number.isInteger(data.id) || data.id < 0 || data.id > 4294967295) {
+          throw new Error('Invalid level format: id must be a uint32 number');
+        }
         if (!data.gridSize || typeof data.gridSize.width !== 'number' || typeof data.gridSize.height !== 'number') {
           throw new Error('Invalid level format: missing or invalid gridSize');
         }
@@ -634,6 +637,13 @@
     hasExit: false
   };
 
+  function generateLevelId(): number {
+    const generated = new Uint32Array(1);
+    crypto.getRandomValues(generated);
+    // Avoid zero to keep IDs truthy across tools and scripts.
+    return generated[0] === 0 ? 1 : generated[0];
+  }
+
   function handleSave() {
     console.log('Save clicked');
 
@@ -679,10 +689,9 @@
   function handleSaveExport(event: CustomEvent<{ name: string; difficulty: 'easy' | 'medium' | 'hard' }>) {
     const { name, difficulty } = event.detail;
 
-    // Generate unique level ID using timestamp + random component
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    const levelId = `${timestamp}-${random}`;
+    // Runtime contract expects numeric IDs (u32-compatible).
+    const levelId = generateLevelId();
+    const filenameToken = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
     // Convert grid cells to position arrays for each entity type
     const obstacles: Position[] = [];
@@ -768,7 +777,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `level-${levelId}.json`;
+    a.download = `level-${filenameToken}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
