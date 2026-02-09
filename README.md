@@ -79,6 +79,7 @@ npm run test:ui    # Open Vitest UI
 ```
 
 Coverage artifacts are written to `coverage/`.
+Coverage is enforced with an 80% line threshold via `vitest.config.ts` and will fail CI if it drops below that gate.
 
 ### Integration Tests
 
