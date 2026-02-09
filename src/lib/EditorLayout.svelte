@@ -649,7 +649,11 @@
     for (let row = 0; row < gridHeight; row++) {
       for (let col = 0; col < gridWidth; col++) {
         const cell = cells[row][col];
-        if (cell.entity === 'food') {
+        if (
+          cell.entity === 'food' ||
+          cell.entity === 'floating-food' ||
+          cell.entity === 'falling-food'
+        ) {
           foodCount++;
         } else if (cell.entity === 'exit') {
           hasExit = true;

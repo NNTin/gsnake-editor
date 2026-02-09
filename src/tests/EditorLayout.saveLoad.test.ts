@@ -159,6 +159,29 @@ describe("EditorLayout save/load workflow", () => {
     expect(screen.queryByRole("heading", { name: "Save Level" })).not.toBeInTheDocument();
   });
 
+  it("does not show no-food warning when only floating food is placed", async () => {
+    const { container } = render(EditorLayout, {
+      gridWidth: 5,
+      gridHeight: 5,
+      initialLevelData: null,
+    });
+
+    await fireEvent.click(getGridCell(container, 0, 0));
+    await fireEvent.click(screen.getByRole("button", { name: "Floating Food" }));
+    await fireEvent.click(getGridCell(container, 0, 1));
+    await fireEvent.click(screen.getByRole("button", { name: "Exit" }));
+    await fireEvent.click(getGridCell(container, 0, 2));
+
+    await fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByRole("heading", { name: "Save Level" })).toBeInTheDocument();
+    expect(
+      screen.queryByText("No food placed - level may not be completable")
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Export Anyway" })).not.toBeInTheDocument();
+  });
+
   it("loads a valid level file and renders the imported grid state", async () => {
     const loadedLevel: LevelData = {
       id: 42,
