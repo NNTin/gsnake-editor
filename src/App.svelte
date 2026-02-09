@@ -2,6 +2,7 @@
   import LandingPage from './lib/LandingPage.svelte'
   import GridSizeModal from './lib/GridSizeModal.svelte'
   import EditorLayout from './lib/EditorLayout.svelte'
+  import { isValidLevelId } from './lib/levelModel'
   import type { LevelData } from './lib/types'
   import toast, { Toaster } from 'svelte-5-french-toast'
 
@@ -24,7 +25,7 @@
       const data = JSON.parse(text) as LevelData;
 
       // Validate required fields
-      if (!Number.isInteger(data.id) || data.id < 0 || data.id > 4294967295) {
+      if (!isValidLevelId(data.id)) {
         throw new Error('Invalid level format: id must be a uint32 number');
       }
       if (!data.gridSize || typeof data.gridSize.width !== 'number' || typeof data.gridSize.height !== 'number') {

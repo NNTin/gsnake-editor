@@ -4,6 +4,7 @@
   import SaveLevelModal from './SaveLevelModal.svelte';
   import HelpModal from './HelpModal.svelte';
   import type { EntityType, GridCell, Direction, LevelData, Position } from './types';
+  import { buildLevelExportPayload, generateLevelId, isValidLevelId } from './levelModel';
   import { onMount, createEventDispatcher } from 'svelte';
   import toast from 'svelte-5-french-toast';
 
@@ -422,7 +423,7 @@
         const data = JSON.parse(text) as LevelData;
 
         // Validate required fields
-        if (!Number.isInteger(data.id) || data.id < 0 || data.id > 4294967295) {
+        if (!isValidLevelId(data.id)) {
           throw new Error('Invalid level format: id must be a uint32 number');
         }
         if (!data.gridSize || typeof data.gridSize.width !== 'number' || typeof data.gridSize.height !== 'number') {
@@ -637,13 +638,6 @@
     hasExit: false
   };
 
-  function generateLevelId(): number {
-    const generated = new Uint32Array(1);
-    crypto.getRandomValues(generated);
-    // Avoid zero to keep IDs truthy across tools and scripts.
-    return generated[0] === 0 ? 1 : generated[0];
-  }
-
   function handleSave() {
     console.log('Save clicked');
 
@@ -689,85 +683,18 @@
   function handleSaveExport(event: CustomEvent<{ name: string; difficulty: 'easy' | 'medium' | 'hard' }>) {
     const { name, difficulty } = event.detail;
 
-    // Runtime contract expects numeric IDs (u32-compatible).
     const levelId = generateLevelId();
     const filenameToken = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-
-    // Convert grid cells to position arrays for each entity type
-    const obstacles: Position[] = [];
-    const food: Position[] = [];
-    const stones: Position[] = [];
-    const spikes: Position[] = [];
-    const floatingFood: Position[] = [];
-    const fallingFood: Position[] = [];
-    let exit: Position | null = null;
-
-    // Iterate through all cells and collect entities by type
-    for (let row = 0; row < gridHeight; row++) {
-      for (let col = 0; col < gridWidth; col++) {
-        const cell = cells[row][col];
-        const position: Position = { x: col, y: row };
-
-        switch (cell.entity) {
-          case 'obstacle':
-            obstacles.push(position);
-            break;
-          case 'food':
-            food.push(position);
-            break;
-          case 'stone':
-            stones.push(position);
-            break;
-          case 'spike':
-            spikes.push(position);
-            break;
-          case 'floating-food':
-            floatingFood.push(position);
-            break;
-          case 'falling-food':
-            fallingFood.push(position);
-            break;
-          case 'exit':
-            exit = position;
-            break;
-          // 'snake' is handled separately via snakeSegments array
-        }
-      }
-    }
-
-    // Convert snake segments to position array
-    const snake: Position[] = snakeSegments.map(seg => ({
-      x: seg.col,
-      y: seg.row
-    }));
-
-    // Capitalize first letter of direction to match format (e.g., "east" -> "East")
-    const snakeDirectionCapitalized =
-      snakeDirection.charAt(0).toUpperCase() + snakeDirection.slice(1);
-
-    // Calculate total food (regular food + floating food + falling food)
-    const totalFoodCount = food.length + floatingFood.length + fallingFood.length;
-
-    // Build level JSON object
-    const levelData = {
-      id: levelId,
-      name: name,
-      difficulty: difficulty,
-      gridSize: {
-        width: gridWidth,
-        height: gridHeight
-      },
-      snake: snake,
-      obstacles: obstacles,
-      food: food,
-      exit: exit,
-      snakeDirection: snakeDirectionCapitalized,
-      floatingFood: floatingFood,
-      fallingFood: fallingFood,
-      stones: stones,
-      spikes: spikes,
-      totalFood: totalFoodCount
-    };
+    const levelData = buildLevelExportPayload({
+      levelId,
+      name,
+      difficulty,
+      gridWidth,
+      gridHeight,
+      cells,
+      snakeSegments,
+      snakeDirection
+    });
 
     // Convert to JSON string with 2-space indentation for readability
     const jsonString = JSON.stringify(levelData, null, 2);
