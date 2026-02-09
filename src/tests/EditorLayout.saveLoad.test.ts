@@ -1,0 +1,236 @@
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/svelte";
+import "@testing-library/jest-dom";
+import EditorLayout from "../lib/EditorLayout.svelte";
+import { isValidLevelId } from "../lib/levelModel";
+import type { LevelData } from "../lib/types";
+
+const toastMock = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+}));
+
+vi.mock("svelte-5-french-toast", () => ({
+  default: toastMock,
+}));
+
+interface CapturedBlob {
+  parts: unknown[];
+  type: string;
+}
+
+const createObjectURLMock = vi.fn<(object: unknown) => string>(() => "blob:level-export");
+const revokeObjectURLMock = vi.fn<(url: string) => void>();
+const capturedBlobs: CapturedBlob[] = [];
+const nativeBlob = globalThis.Blob;
+
+class MockBlob {
+  parts: unknown[];
+  type: string;
+
+  constructor(parts: unknown[], options?: { type?: string }) {
+    this.parts = parts;
+    this.type = options?.type ?? "";
+    capturedBlobs.push({ parts: [...parts], type: this.type });
+  }
+}
+
+function getGridCell(container: HTMLElement, row: number, col: number): HTMLElement {
+  const cell = container.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+  if (!(cell instanceof HTMLElement)) {
+    throw new Error(`Grid cell not found at row=${row}, col=${col}`);
+  }
+
+  return cell;
+}
+
+async function loadLevelFromFile(contents: string, filename: string): Promise<void> {
+  await fireEvent.click(screen.getByRole("button", { name: "Load" }));
+
+  const input = document.body.querySelector('input[type="file"]');
+  expect(input).toBeInstanceOf(HTMLInputElement);
+
+  const fileLike = {
+    name: filename,
+    async text() {
+      return contents;
+    },
+  } as File;
+
+  Object.defineProperty(input, "files", {
+    value: [fileLike],
+    configurable: true,
+  });
+
+  await fireEvent.change(input as HTMLInputElement);
+}
+
+describe("EditorLayout save/load workflow", () => {
+  let anchorClickSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    toastMock.success.mockReset();
+    toastMock.error.mockReset();
+    createObjectURLMock.mockClear();
+    revokeObjectURLMock.mockClear();
+    capturedBlobs.length = 0;
+
+    Object.defineProperty(globalThis, "Blob", {
+      value: MockBlob,
+      configurable: true,
+      writable: true,
+    });
+
+    Object.defineProperty(URL, "createObjectURL", {
+      value: createObjectURLMock,
+      configurable: true,
+      writable: true,
+    });
+
+    Object.defineProperty(URL, "revokeObjectURL", {
+      value: revokeObjectURLMock,
+      configurable: true,
+      writable: true,
+    });
+
+    anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    anchorClickSpy.mockRestore();
+    Object.defineProperty(globalThis, "Blob", {
+      value: nativeBlob,
+      configurable: true,
+      writable: true,
+    });
+  });
+
+  it("opens save modal and exports a generated level payload", async () => {
+    const { container } = render(EditorLayout, {
+      gridWidth: 5,
+      gridHeight: 5,
+      initialLevelData: null,
+    });
+
+    await fireEvent.click(getGridCell(container, 0, 0));
+    await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+    await fireEvent.click(getGridCell(container, 0, 1));
+    await fireEvent.click(screen.getByRole("button", { name: "Exit" }));
+    await fireEvent.click(getGridCell(container, 0, 2));
+
+    await fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByRole("heading", { name: "Save Level" })).toBeInTheDocument();
+
+    await fireEvent.input(screen.getByLabelText("Level Name"), {
+      target: { value: "Workflow Level" },
+    });
+
+    await fireEvent.change(screen.getByLabelText("Difficulty"), {
+      target: { value: "hard" },
+    });
+
+    await fireEvent.click(screen.getByRole("button", { name: "Export" }));
+
+    await waitFor(() => {
+      expect(createObjectURLMock).toHaveBeenCalledTimes(1);
+    });
+
+    const exportedBlob = createObjectURLMock.mock.calls[0][0] as CapturedBlob;
+    const exportedPayload = JSON.parse(String(exportedBlob.parts[0]));
+
+    expect(isValidLevelId(exportedPayload.id)).toBe(true);
+    expect(exportedPayload.name).toBe("Workflow Level");
+    expect(exportedPayload.difficulty).toBe("hard");
+    expect(exportedPayload.gridSize).toEqual({ width: 5, height: 5 });
+    expect(exportedPayload.snake).toEqual([{ x: 0, y: 0 }]);
+    expect(exportedPayload.food).toEqual([{ x: 1, y: 0 }]);
+    expect(exportedPayload.exit).toEqual({ x: 2, y: 0 });
+    expect(exportedPayload.snakeDirection).toBe("East");
+    expect(exportedPayload.totalFood).toBe(1);
+    expect(exportedBlob.type).toBe("application/json");
+
+    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURLMock).toHaveBeenCalledWith("blob:level-export");
+    expect(toastMock.success).toHaveBeenCalledWith(
+      'Level "Workflow Level" saved successfully!',
+      expect.any(Object)
+    );
+    expect(screen.queryByRole("heading", { name: "Save Level" })).not.toBeInTheDocument();
+  });
+
+  it("loads a valid level file and renders the imported grid state", async () => {
+    const loadedLevel: LevelData = {
+      id: 42,
+      name: "Loaded Level",
+      gridSize: {
+        width: 5,
+        height: 6,
+      },
+      snake: [
+        { x: 1, y: 1 },
+        { x: 1, y: 2 },
+      ],
+      obstacles: [{ x: 0, y: 0 }],
+      food: [{ x: 3, y: 4 }],
+      exit: { x: 4, y: 5 },
+      snakeDirection: "South",
+      floatingFood: [{ x: 2, y: 0 }],
+      fallingFood: [{ x: 4, y: 0 }],
+      stones: [{ x: 0, y: 5 }],
+      spikes: [{ x: 2, y: 2 }],
+    };
+
+    const { container } = render(EditorLayout, {
+      gridWidth: 8,
+      gridHeight: 8,
+      initialLevelData: null,
+    });
+
+    await loadLevelFromFile(JSON.stringify(loadedLevel), "loaded-level.json");
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox")).toHaveValue("south");
+    });
+
+    expect(container.querySelectorAll(".cell")).toHaveLength(30);
+    expect(getGridCell(container, 1, 1)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 1, 1)).toHaveTextContent("H");
+    expect(getGridCell(container, 2, 1)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 2, 1)).toHaveTextContent("1");
+    expect(getGridCell(container, 0, 0)).toHaveClass("has-entity");
+    expect(getGridCell(container, 4, 3)).toHaveClass("has-entity");
+    expect(getGridCell(container, 5, 4)).toHaveClass("has-entity");
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("shows user-facing error feedback when loading an invalid level payload", async () => {
+    render(EditorLayout, {
+      gridWidth: 6,
+      gridHeight: 6,
+      initialLevelData: null,
+    });
+
+    const invalidPayload = {
+      id: 7,
+      name: "Broken Level",
+      gridSize: {
+        width: 6,
+        height: 6,
+      },
+      snake: [],
+      snakeDirection: "East",
+    };
+
+    await loadLevelFromFile(JSON.stringify(invalidPayload), "invalid-level.json");
+
+    await waitFor(() => {
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Failed to load level: Invalid level format: missing or invalid snake."
+        ),
+        expect.any(Object)
+      );
+    });
+  });
+});

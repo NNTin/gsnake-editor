@@ -5,7 +5,7 @@
   import HelpModal from './HelpModal.svelte';
   import type { EntityType, GridCell, Direction, LevelData, Position } from './types';
   import { buildLevelExportPayload, generateLevelId, isValidLevelId } from './levelModel';
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount, createEventDispatcher, tick } from 'svelte';
   import toast from 'svelte-5-french-toast';
 
   const dispatch = createEventDispatcher<{
@@ -445,9 +445,10 @@
         undoStack = [];
         redoStack = [];
 
-        // Update grid dimensions
+        // Update grid dimensions first so the reactive grid reset runs before entity placement.
         gridWidth = data.gridSize.width;
         gridHeight = data.gridSize.height;
+        await tick();
 
         // Load the level data
         placeEntitiesFromLevelData(data);
