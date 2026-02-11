@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { spritesUrl } from "gsnake-web-ui";
   import type { GridCell, EntityType } from './types';
 
   export let gridWidth: number;
@@ -15,18 +16,6 @@
   }>();
 
   let isShiftPressed = false;
-
-  // Entity color map
-  const entityColors: Record<EntityType, string> = {
-    'snake': '#4caf50',
-    'obstacle': '#666',
-    'food': '#ff9800',
-    'exit': '#2196f3',
-    'stone': '#9e9e9e',
-    'spike': '#f44336',
-    'floating-food': '#ffc107',
-    'falling-food': '#ff5722'
-  };
 
   // Calculate total grid dimensions
   $: totalWidth = gridWidth * CELL_SIZE + (gridWidth - 1) * GRID_GAP;
@@ -48,15 +37,38 @@
     }
   }
 
-  function getCellBackgroundColor(entity: EntityType | null): string {
-    return entity ? entityColors[entity] : 'white';
-  }
-
   function getCellLabel(cell: GridCell): string {
     if (cell.isSnakeSegment && cell.snakeSegmentIndex !== undefined) {
       return cell.snakeSegmentIndex === 0 ? 'H' : String(cell.snakeSegmentIndex);
     }
     return '';
+  }
+
+  function getSpriteId(cell: GridCell): string | null {
+    if (cell.entity === null) {
+      return null;
+    }
+
+    switch (cell.entity) {
+      case "snake":
+        return cell.snakeSegmentIndex === 0 ? "SnakeHead" : "SnakeBody";
+      case "obstacle":
+        return "Obstacle";
+      case "food":
+        return "Food";
+      case "exit":
+        return "Exit";
+      case "stone":
+        return "Stone";
+      case "spike":
+        return "Spike";
+      case "floating-food":
+        return "FloatingFood";
+      case "falling-food":
+        return "FallingFood";
+      default:
+        return null;
+    }
   }
 
   function handleDragOver(event: DragEvent) {
@@ -95,11 +107,7 @@
           class:has-entity={cell.entity !== null}
           class:is-snake-segment={cell.isSnakeSegment}
           class:shift-hover={isShiftPressed && cell.entity !== null}
-          style="
-            width: {CELL_SIZE}px;
-            height: {CELL_SIZE}px;
-            background-color: {getCellBackgroundColor(cell.entity)};
-          "
+          style="width: {CELL_SIZE}px; height: {CELL_SIZE}px;"
           data-row={cell.row}
           data-col={cell.col}
           on:click={(e) => handleCellClick(cell.row, cell.col, e.shiftKey)}
@@ -109,6 +117,11 @@
           role="button"
           tabindex="0"
         >
+          {#if getSpriteId(cell)}
+            <svg class="cell-sprite" viewBox="0 0 32 32" aria-hidden="true">
+              <use href={`${spritesUrl}#${getSpriteId(cell)}`} />
+            </svg>
+          {/if}
           {#if cell.isSnakeSegment}
             <span class="segment-label">{getCellLabel(cell)}</span>
           {/if}
@@ -138,6 +151,7 @@
     cursor: pointer;
     transition: opacity 0.1s;
     position: relative;
+    background: #fff;
   }
 
   .cell:hover::after {
@@ -179,5 +193,11 @@
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
     user-select: none;
     pointer-events: none;
+  }
+
+  .cell-sprite {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
 </style>

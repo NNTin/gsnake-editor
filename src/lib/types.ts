@@ -13,7 +13,7 @@ export type Direction = "north" | "south" | "east" | "west";
 export interface Entity {
   type: EntityType;
   name: string;
-  color: string;
+  spriteId: string;
 }
 
 export interface GridCell {

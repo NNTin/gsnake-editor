@@ -7,181 +7,96 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  FORCE_GIT_DEPS: "1"
+
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout submodule
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: gsnake-editor
-
-      - name: Resolve gsnake-editor directory
-        run: |
-          for candidate in "." "gsnake-editor" "gsnake-editor/gsnake-editor"; do
-            if [ -f "${candidate}/package.json" ] && [ -f "${candidate}/vite.config.ts" ] && [ -f "${candidate}/server.ts" ]; then
-              echo "EDITOR_DIR=${candidate}" >> "$GITHUB_ENV"
-              exit 0
-            fi
-          done
-          echo "Unable to locate gsnake-editor package.json" >&2
-          ls -la
-          find . -maxdepth 3 -type f -name package.json
-          exit 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: ${{ env.EDITOR_DIR }}/package-lock.json
-
-      - name: Configure git to use HTTPS
-        run: |
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ${{ env.EDITOR_DIR }}
+        run: npm ci
 
       - name: Build
         run: npm run build
-        working-directory: ${{ env.EDITOR_DIR }}
 
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout submodule
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: gsnake-editor
-
-      - name: Resolve gsnake-editor directory
-        run: |
-          for candidate in "." "gsnake-editor" "gsnake-editor/gsnake-editor"; do
-            if [ -f "${candidate}/package.json" ] && [ -f "${candidate}/vite.config.ts" ] && [ -f "${candidate}/server.ts" ]; then
-              echo "EDITOR_DIR=${candidate}" >> "$GITHUB_ENV"
-              exit 0
-            fi
-          done
-          echo "Unable to locate gsnake-editor package.json" >&2
-          ls -la
-          find . -maxdepth 3 -type f -name package.json
-          exit 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: ${{ env.EDITOR_DIR }}/package-lock.json
-
-      - name: Configure git to use HTTPS
-        run: |
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ${{ env.EDITOR_DIR }}
+        run: npm ci
 
       - name: Typecheck
         run: npm run check
-        working-directory: ${{ env.EDITOR_DIR }}
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout submodule
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: gsnake-editor
-
-      - name: Resolve gsnake-editor directory
-        run: |
-          for candidate in "." "gsnake-editor" "gsnake-editor/gsnake-editor"; do
-            if [ -f "${candidate}/package.json" ] && [ -f "${candidate}/vite.config.ts" ] && [ -f "${candidate}/server.ts" ]; then
-              echo "EDITOR_DIR=${candidate}" >> "$GITHUB_ENV"
-              exit 0
-            fi
-          done
-          echo "Unable to locate gsnake-editor package.json" >&2
-          ls -la
-          find . -maxdepth 3 -type f -name package.json
-          exit 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: ${{ env.EDITOR_DIR }}/package-lock.json
-
-      - name: Configure git to use HTTPS
-        run: |
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ${{ env.EDITOR_DIR }}
+        run: npm ci
 
       - name: Test
         run: npm test
-        working-directory: ${{ env.EDITOR_DIR }}
 
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout submodule
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: gsnake-editor
-
-      - name: Resolve gsnake-editor directory
-        run: |
-          for candidate in "." "gsnake-editor" "gsnake-editor/gsnake-editor"; do
-            if [ -f "${candidate}/package.json" ] && [ -f "${candidate}/vite.config.ts" ] && [ -f "${candidate}/server.ts" ]; then
-              echo "EDITOR_DIR=${candidate}" >> "$GITHUB_ENV"
-              exit 0
-            fi
-          done
-          echo "Unable to locate gsnake-editor package.json" >&2
-          ls -la
-          find . -maxdepth 3 -type f -name package.json
-          exit 1
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: ${{ env.EDITOR_DIR }}/package-lock.json
-
-      - name: Configure git to use HTTPS
-        run: |
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ${{ env.EDITOR_DIR }}
+        run: npm ci
 
       - name: Run coverage
         run: npm run coverage
-        working-directory: ${{ env.EDITOR_DIR }}
 
       - name: Upload coverage artifact
         if: ${{ always() && env.ACT != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: gsnake-editor-coverage
-          path: ${{ env.EDITOR_DIR }}/coverage
+          path: coverage
 
   required-merge-gates:
     name: Required Merge Gates

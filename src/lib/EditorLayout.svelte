@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Overlay as SharedOverlay } from 'gsnake-web-ui';
   import EntityPalette from './EntityPalette.svelte';
   import GridCanvas from './GridCanvas.svelte';
   import SaveLevelModal from './SaveLevelModal.svelte';
@@ -808,6 +809,13 @@
   <HelpModal on:close={handleHelpClose} />
 {/if}
 
+<SharedOverlay visible={isTestingLevel || isLoadingFile}>
+  <div class="loading-overlay">
+    <span class="spinner"></span>
+    <p>{isLoadingFile ? "Loading level file..." : "Uploading test level..."}</p>
+  </div>
+</SharedOverlay>
+
 <style>
   .editor-container {
     display: flex;
@@ -944,5 +952,21 @@
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+
+  .loading-overlay {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    color: #333;
+  }
+
+  .loading-overlay p {
+    margin: 0;
+    font-weight: 500;
   }
 </style>

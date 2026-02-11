@@ -3,14 +3,14 @@
   import type { EntityType, Entity } from './types';
 
   const entities: Entity[] = [
-    { type: 'snake', name: 'Snake', color: '#4caf50' },
-    { type: 'obstacle', name: 'Obstacle', color: '#666' },
-    { type: 'food', name: 'Food', color: '#ff9800' },
-    { type: 'exit', name: 'Exit', color: '#2196f3' },
-    { type: 'stone', name: 'Stone', color: '#9e9e9e' },
-    { type: 'spike', name: 'Spike', color: '#f44336' },
-    { type: 'floating-food', name: 'Floating Food', color: '#ffc107' },
-    { type: 'falling-food', name: 'Falling Food', color: '#ff5722' },
+    { type: 'snake', name: 'Snake', spriteId: 'SnakeHead' },
+    { type: 'obstacle', name: 'Obstacle', spriteId: 'Obstacle' },
+    { type: 'food', name: 'Food', spriteId: 'Food' },
+    { type: 'exit', name: 'Exit', spriteId: 'Exit' },
+    { type: 'stone', name: 'Stone', spriteId: 'Stone' },
+    { type: 'spike', name: 'Spike', spriteId: 'Spike' },
+    { type: 'floating-food', name: 'Floating Food', spriteId: 'FloatingFood' },
+    { type: 'falling-food', name: 'Falling Food', spriteId: 'FallingFood' },
   ];
 
   let selectedEntity: EntityType = 'snake';
@@ -27,16 +27,18 @@
       event.dataTransfer.effectAllowed = 'copy';
       event.dataTransfer.setData('entityType', entityType);
 
-      // Create a custom drag image with entity color
+      // Create a custom drag image with the entity sprite
       const entity = entities.find(e => e.type === entityType);
       if (entity) {
         const dragImage = document.createElement('div');
         dragImage.style.width = '32px';
         dragImage.style.height = '32px';
-        dragImage.style.backgroundColor = entity.color;
-        dragImage.style.borderRadius = '4px';
-        dragImage.style.border = '2px solid white';
+        dragImage.style.backgroundColor = '#ffffff';
+        dragImage.style.borderRadius = '6px';
+        dragImage.style.padding = '2px';
+        dragImage.style.border = '1px solid #ddd';
         dragImage.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+        dragImage.innerHTML = `<svg viewBox="0 0 32 32" width="28" height="28"><use href="#${entity.spriteId}"></use></svg>`;
         dragImage.style.position = 'absolute';
         dragImage.style.top = '-1000px';
         document.body.appendChild(dragImage);
@@ -54,12 +56,13 @@
     <button
       class="entity-item"
       class:selected={selectedEntity === entity.type}
-      style="--entity-color: {entity.color}"
       draggable="true"
       on:click={() => selectEntity(entity.type)}
       on:dragstart={(e) => handleDragStart(e, entity.type)}
     >
-      <div class="entity-icon" style="background-color: {entity.color}"></div>
+      <svg class="entity-icon" viewBox="0 0 32 32" aria-hidden="true">
+        <use href="#{entity.spriteId}" />
+      </svg>
       <span class="entity-name">{entity.name}</span>
     </button>
   {/each}
@@ -91,7 +94,7 @@
   }
 
   .entity-item.selected {
-    border-color: var(--entity-color);
+    border-color: #4caf50;
     background-color: #f5f5f5;
   }
 
@@ -102,7 +105,6 @@
   .entity-icon {
     width: 24px;
     height: 24px;
-    border-radius: 4px;
     flex-shrink: 0;
   }
 

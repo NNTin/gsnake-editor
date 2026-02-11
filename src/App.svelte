@@ -2,6 +2,7 @@
   import LandingPage from './lib/LandingPage.svelte'
   import GridSizeModal from './lib/GridSizeModal.svelte'
   import EditorLayout from './lib/EditorLayout.svelte'
+  import SpriteLoader from './lib/SpriteLoader.svelte'
   import { isValidLevelId } from './lib/levelModel'
   import type { LevelData } from './lib/types'
   import toast, { Toaster } from 'svelte-5-french-toast'
@@ -80,6 +81,7 @@
 </script>
 
 <Toaster />
+<SpriteLoader />
 
 <main>
   {#if showEditor}

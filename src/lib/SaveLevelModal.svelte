@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { Modal } from 'gsnake-web-ui';
   import toast from 'svelte-5-french-toast';
 
   const dispatch = createEventDispatcher<{
@@ -49,89 +50,66 @@
   }
 </script>
 
-<div class="modal-overlay">
-  <div class="modal">
-    <h2>Save Level</h2>
-    <p class="description">Provide level metadata before exporting</p>
+<Modal open={true} closeOnBackdrop={false}>
+  <h2 slot="header" class="modal-title">Save Level</h2>
+  <p class="description">Provide level metadata before exporting</p>
 
-    <div class="form-group">
-      <label for="name">Level Name</label>
-      <input
-        id="name"
-        type="text"
-        bind:value={name}
-        placeholder="Enter level name"
-        required
-      />
-    </div>
-
-    <div class="form-group">
-      <label for="difficulty">Difficulty</label>
-      <select
-        id="difficulty"
-        bind:value={difficulty}
-        required
-      >
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
-    </div>
-
-    <div class="info-box">
-      <span class="info-icon">ℹ️</span>
-      Level ID will be auto-generated
-    </div>
-
-    {#if hasWarnings}
-      <div class="warning-box">
-        <span class="warning-icon">⚠️</span>
-        <div class="warning-content">
-          <strong>Validation Warnings:</strong>
-          <ul>
-            {#each warnings as warning (warning)}
-              <li>{warning}</li>
-            {/each}
-          </ul>
-        </div>
-      </div>
-    {/if}
-
-    <div class="button-group">
-      <button class="secondary-button" on:click={handleCancel}>
-        Cancel
-      </button>
-      <button class="primary-button" on:click={handleExport}>
-        {hasWarnings ? 'Export Anyway' : 'Export'}
-      </button>
-    </div>
+  <div class="form-group">
+    <label for="name">Level Name</label>
+    <input
+      id="name"
+      type="text"
+      bind:value={name}
+      placeholder="Enter level name"
+      required
+    />
   </div>
-</div>
+
+  <div class="form-group">
+    <label for="difficulty">Difficulty</label>
+    <select
+      id="difficulty"
+      bind:value={difficulty}
+      required
+    >
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+
+  <div class="info-box">
+    <span class="info-icon">ℹ️</span>
+    Level ID will be auto-generated
+  </div>
+
+  {#if hasWarnings}
+    <div class="warning-box">
+      <span class="warning-icon">⚠️</span>
+      <div class="warning-content">
+        <strong>Validation Warnings:</strong>
+        <ul>
+          {#each warnings as warning (warning)}
+            <li>{warning}</li>
+          {/each}
+        </ul>
+      </div>
+    </div>
+  {/if}
+
+  <div slot="footer" class="button-group">
+    <button class="secondary-button" on:click={handleCancel}>
+      Cancel
+    </button>
+    <button class="primary-button" on:click={handleExport}>
+      {hasWarnings ? 'Export Anyway' : 'Export'}
+    </button>
+  </div>
+</Modal>
 
 <style>
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-
-  .modal {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    min-width: 400px;
-  }
-
-  h2 {
-    margin: 0 0 0.5rem 0;
+  .modal-title {
+    margin: 0;
     color: #333;
     font-size: 1.5rem;
   }
@@ -237,7 +215,8 @@
   .button-group {
     display: flex;
     gap: 0.75rem;
-    margin-top: 1.5rem;
+    width: 100%;
+    justify-content: stretch;
   }
 
   .primary-button,

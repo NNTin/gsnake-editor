@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "node scripts/detect-gsnake-web-ui.js",
     "dev": "concurrently \"npm run dev:editor\" \"npm run dev:server\"",
     "dev:editor": "vite",
     "dev:server": "tsx server.ts",
@@ -51,6 +52,7 @@
     "@types/express": "^5.0.6",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "gsnake-web-ui": "file:../gsnake-web/packages/gsnake-web-ui",
     "svelte-5-french-toast": "^2.0.6"
   }
 }

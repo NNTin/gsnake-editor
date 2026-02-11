@@ -7,5 +7,8 @@ export default defineConfig({
   server: {
     port: 3003,
     strictPort: true,
+    fs: {
+      allow: [".", "../gsnake-web/packages/gsnake-web-ui", "./vendor/gsnake-web-ui"],
+    },
   },
 });
