@@ -18,6 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, "..");
 const packageJsonPath = join(projectRoot, "package.json");
+const packageLockPath = join(projectRoot, "package-lock.json");
 
 const forceGitDeps = process.env.FORCE_GIT_DEPS === "1" || process.env.FORCE_GIT_DEPS === "true";
 
@@ -39,6 +40,8 @@ const archiveUrl = "https://codeload.github.com/NNTin/gsnake-web/tar.gz/refs/hea
 
 const localDependency = "file:../gsnake-web/packages/gsnake-web-ui";
 const vendorDependency = "file:./vendor/gsnake-web-ui";
+const localLockResolved = "../gsnake-web/packages/gsnake-web-ui";
+const vendorLockResolved = "vendor/gsnake-web-ui";
 
 const isRootRepo = !forceGitDeps && existsSync(rootGitPath) && existsSync(localUiPackageJson);
 
@@ -60,7 +63,7 @@ function runCommand(command, args, cwd) {
   }
 }
 
-function updateDependency(targetDependency, label) {
+function updateDependency(targetDependency, label, targetResolved) {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
   const currentDependency = packageJson.dependencies["gsnake-web-ui"];
 
@@ -73,9 +76,53 @@ function updateDependency(targetDependency, label) {
   }
 
   console.log(`[detect-gsnake-web-ui] Using ${label}`);
+
+  if (!existsSync(packageLockPath)) {
+    console.log("[detect-gsnake-web-ui] package-lock.json not found, skipping lock update");
+    return;
+  }
+
+  const packageLock = JSON.parse(readFileSync(packageLockPath, "utf8"));
+  const packages = packageLock.packages ?? {};
+  let lockChanged = false;
+
+  const rootPackage = packages[""];
+  if (!rootPackage || !rootPackage.dependencies) {
+    console.warn(
+      "[detect-gsnake-web-ui] Unexpected package-lock.json format for root package; skipping lock update"
+    );
+  } else if (rootPackage.dependencies["gsnake-web-ui"] !== targetDependency) {
+    rootPackage.dependencies["gsnake-web-ui"] = targetDependency;
+    lockChanged = true;
+  }
+
+  const nodeModule = packages["node_modules/gsnake-web-ui"] ?? {};
+  if (nodeModule.resolved !== targetResolved || nodeModule.link !== true) {
+    nodeModule.resolved = targetResolved;
+    nodeModule.link = true;
+    packages["node_modules/gsnake-web-ui"] = nodeModule;
+    lockChanged = true;
+  }
+
+  if (!packages[targetResolved]) {
+    const template = packages[localLockResolved] ?? packages[vendorLockResolved] ?? null;
+    packages[targetResolved] = template
+      ? JSON.parse(JSON.stringify(template))
+      : { version: "0.1.0" };
+    lockChanged = true;
+  }
+
+  if (lockChanged) {
+    packageLock.packages = packages;
+    writeFileSync(packageLockPath, JSON.stringify(packageLock, null, 2) + "\n");
+    console.log(`[detect-gsnake-web-ui] Updated package-lock.json for ${label}`);
+  } else {
+    console.log(`[detect-gsnake-web-ui] package-lock.json already matches ${label}`);
+  }
 }
 
-function ensureBuiltUiPackage(uiDir, label) {
+function ensureBuiltUiPackage(uiDir, label, options = {}) {
+  const { skipPrebuildValidation = false } = options;
   const modalDistPath = join(uiDir, "dist", "Modal.js");
   const overlayDistPath = join(uiDir, "dist", "Overlay.js");
 
@@ -87,10 +134,44 @@ function ensureBuiltUiPackage(uiDir, label) {
   console.log(`[detect-gsnake-web-ui] Building ${label} for precompiled component consumption`);
 
   if (!existsSync(join(uiDir, "node_modules"))) {
-    runCommand("npm", ["install"], uiDir);
+    if (skipPrebuildValidation) {
+      runCommand("npm", ["install", "--ignore-scripts"], uiDir);
+    } else {
+      runCommand("npm", ["install"], uiDir);
+    }
+  }
+
+  if (skipPrebuildValidation) {
+    runCommand("node", ["scripts/build-components.js"], uiDir);
+    return;
   }
 
   runCommand("npm", ["run", "build"], uiDir);
+}
+
+function patchVendoredUiPackage(uiDir) {
+  const packagePath = join(uiDir, "package.json");
+  if (!existsSync(packagePath)) return;
+
+  const pkg = JSON.parse(readFileSync(packagePath, "utf8"));
+  if (!pkg.scripts) return;
+
+  let changed = false;
+
+  if (pkg.scripts.prepare) {
+    delete pkg.scripts.prepare;
+    changed = true;
+  }
+
+  if (pkg.scripts.prebuild === "node ../../scripts/validate-sprites.js") {
+    pkg.scripts.prebuild = "node -e \"console.log('Skipping vendored sprite validation')\"";
+    changed = true;
+  }
+
+  if (changed) {
+    writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + "\n");
+    console.log("[detect-gsnake-web-ui] Patched vendored gsnake-web-ui package scripts");
+  }
 }
 
 async function downloadVendorSnapshot() {
@@ -141,7 +222,11 @@ async function ensureVendoredSnapshot() {
     console.log("[detect-gsnake-web-ui] Vendored snapshot already present");
   }
 
-  ensureBuiltUiPackage(vendorUiDir, "vendored gsnake-web-ui");
+  patchVendoredUiPackage(vendorUiDir);
+
+  ensureBuiltUiPackage(vendorUiDir, "vendored gsnake-web-ui", {
+    skipPrebuildValidation: true,
+  });
 }
 
 async function run() {
@@ -151,13 +236,13 @@ async function run() {
   if (isRootRepo) {
     console.log("[detect-gsnake-web-ui] Root repository mode detected");
     ensureBuiltUiPackage(localUiDir, "local gsnake-web-ui");
-    updateDependency(localDependency, "local gsnake-web-ui dependency");
+    updateDependency(localDependency, "local gsnake-web-ui dependency", localLockResolved);
     return;
   }
 
   console.log("[detect-gsnake-web-ui] Standalone mode detected");
   await ensureVendoredSnapshot();
-  updateDependency(vendorDependency, "vendored gsnake-web-ui dependency");
+  updateDependency(vendorDependency, "vendored gsnake-web-ui dependency", vendorLockResolved);
 }
 
 run()
