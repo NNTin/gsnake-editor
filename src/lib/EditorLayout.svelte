@@ -83,6 +83,8 @@
       }
     });
 
+    // Missing optional arrays must be treated as empty for backward-compatible
+    // LevelDefinition round-trips. See contracts/level-definition-semantics.md.
     // Place other entities
     placeEntity(data.obstacles || [], 'obstacle');
     placeEntity(data.food || [], 'food');

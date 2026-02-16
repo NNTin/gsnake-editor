@@ -46,6 +46,8 @@ function isLevelExpired(level: StoredLevel): boolean {
 
 // POST /api/test-level - Store a test level
 app.post("/api/test-level", (req, res) => {
+  // Round-trip and optional-field semantics are defined in
+  // contracts/level-definition-semantics.md.
   const validationErrors = validateLevelPayload(req.body);
 
   if (validationErrors.length > 0) {

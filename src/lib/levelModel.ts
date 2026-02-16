@@ -1,5 +1,7 @@
 import type { Direction, GridCell, Position } from "./types";
 
+// See contracts/level-definition-semantics.md for the authoritative
+// optional-field and totalFood round-trip contract.
 export const UINT32_MAX = 4_294_967_295;
 
 export type Difficulty = "easy" | "medium" | "hard";
@@ -135,6 +137,7 @@ export function buildLevelExportPayload(input: BuildLevelExportInput): LevelExpo
     y: segment.row,
   }));
 
+  // Keep totalFood in sync with the LevelDefinition semantics contract.
   const totalFood = food.length + floatingFood.length + fallingFood.length;
 
   return {
