@@ -51,6 +51,25 @@ npm test
 npm run coverage
 ```
 
+## Test-Level API Validation
+
+`POST /api/test-level` validates payloads against `contracts/level-definition.schema.json`.
+
+Invalid payloads return:
+
+```json
+{
+  "error": "Invalid level payload",
+  "details": [
+    {
+      "field": "gridSize.width",
+      "keyword": "type",
+      "message": "must be integer"
+    }
+  ]
+}
+```
+
 ## Shared Art Style Notes
 
 The editor imports shared styles/assets/components from `gsnake-web-ui`:

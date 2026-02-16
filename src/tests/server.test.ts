@@ -40,6 +40,13 @@ describe("Server API tests", () => {
       expect(response.body).toMatchObject({ error: "Invalid level payload" });
       expect(response.body.details).toBeInstanceOf(Array);
       expect(response.body.details.length).toBeGreaterThan(0);
+      expect(response.body.details[0]).toEqual(
+        expect.objectContaining({
+          field: expect.any(String),
+          keyword: expect.any(String),
+          message: expect.any(String),
+        })
+      );
     });
 
     it("should reject malformed payloads", async () => {
@@ -56,9 +63,18 @@ describe("Server API tests", () => {
       expect(response.body).toMatchObject({ error: "Invalid level payload" });
       expect(response.body.details).toEqual(
         expect.arrayContaining([
-          "id must be a finite number.",
-          "gridSize.width must be a finite number.",
-          "snakeDirection must be one of North, South, East, or West.",
+          expect.objectContaining({
+            field: "id",
+            keyword: "type",
+          }),
+          expect.objectContaining({
+            field: "gridSize.width",
+            keyword: "type",
+          }),
+          expect.objectContaining({
+            field: "snakeDirection",
+            keyword: "enum",
+          }),
         ])
       );
     });
