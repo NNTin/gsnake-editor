@@ -79,6 +79,115 @@ describe("Server API tests", () => {
       );
     });
 
+    it("should reject gridSize width of zero with structured minimum errors", async () => {
+      const response = await request(app)
+        .post("/api/test-level")
+        .send({
+          ...validLevelData,
+          gridSize: {
+            width: 0,
+            height: 10,
+          },
+        })
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        error: "Invalid level payload",
+      });
+      expect(response.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "gridSize.width",
+            keyword: "minimum",
+          }),
+        ])
+      );
+    });
+
+    it("should accept negative coordinates that satisfy schema integer constraints", async () => {
+      const payloadWithNegativeCoordinates = {
+        ...validLevelData,
+        snake: [{ x: -1, y: -2 }],
+        food: [{ x: -3, y: 3 }],
+        exit: { x: -4, y: 9 },
+      };
+
+      await request(app).post("/api/test-level").send(payloadWithNegativeCoordinates).expect(200);
+
+      const response = await request(app).get("/api/test-level").expect(200);
+      expect(response.body).toEqual(payloadWithNegativeCoordinates);
+    });
+
+    it("should reject invalid coordinate types with structured coordinate field details", async () => {
+      const response = await request(app)
+        .post("/api/test-level")
+        .send({
+          ...validLevelData,
+          snake: [{ x: "left", y: 2 }],
+          food: [{ x: 3, y: 3.5 }],
+          exit: { x: 9, y: null },
+        })
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        error: "Invalid level payload",
+      });
+      expect(response.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "snake.0.x",
+            keyword: "type",
+          }),
+          expect.objectContaining({
+            field: "food.0.y",
+            keyword: "type",
+          }),
+          expect.objectContaining({
+            field: "exit.y",
+            keyword: "type",
+          }),
+        ])
+      );
+    });
+
+    it("should reject invalid field combinations with stable 400 contract", async () => {
+      const response = await request(app)
+        .post("/api/test-level")
+        .send({
+          ...validLevelData,
+          floatingFood: [{ x: 2 }],
+          stones: [{ x: 1, y: 1, z: 9 }],
+          spikes: "bad-spikes",
+          unexpectedField: true,
+        })
+        .expect(400);
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({
+        error: "Invalid level payload",
+      });
+      expect(response.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "floatingFood.0.y",
+            keyword: "required",
+          }),
+          expect.objectContaining({
+            field: "stones.0.z",
+            keyword: "additionalProperties",
+          }),
+          expect.objectContaining({
+            field: "spikes",
+            keyword: "type",
+          }),
+          expect.objectContaining({
+            field: "unexpectedField",
+            keyword: "additionalProperties",
+          }),
+        ])
+      );
+    });
+
     it("should reject malformed JSON bodies", async () => {
       const response = await request(app)
         .post("/api/test-level")
