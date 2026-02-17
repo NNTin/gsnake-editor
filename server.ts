@@ -7,6 +7,10 @@ const PORT = 3001;
 const ALLOWED_METHODS = ["GET", "POST"] as const;
 const CORS_NOT_ALLOWED_ERROR = "Not allowed by CORS";
 const ALLOWED_ORIGINS_ENV = "GSNAKE_EDITOR_ALLOWED_ORIGINS";
+const API_HEALTH_RESPONSE = Object.freeze({
+  status: "ok",
+  service: "gsnake-editor-api",
+});
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
@@ -47,6 +51,11 @@ app.use(
 
 // Parse JSON bodies
 app.use(express.json());
+
+// GET /health - deterministic readiness signal for CI/local checks
+app.get("/health", (_req, res) => {
+  res.status(200).json(API_HEALTH_RESPONSE);
+});
 
 // In-memory storage for test level
 interface StoredLevel {
@@ -136,9 +145,11 @@ const isMainModule =
   import.meta.url.endsWith(process.argv[1]) || import.meta.url === `file://${process.argv[1]}`;
 
 if (isMainModule) {
-  app.listen(PORT, "0.0.0.0", () => {
+  // Bind without an explicit host so localhost resolves on both IPv4 and IPv6.
+  app.listen(PORT, () => {
     console.log(`Test level server running on http://localhost:${PORT}`);
     console.log("Endpoints:");
+    console.log(`  GET  http://localhost:${PORT}/health`);
     console.log(`  POST http://localhost:${PORT}/api/test-level`);
     console.log(`  GET  http://localhost:${PORT}/api/test-level`);
   });

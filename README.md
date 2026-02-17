@@ -54,6 +54,23 @@ npm test
 npm run coverage
 ```
 
+## Health Endpoints
+
+- `GET http://localhost:3001/health` (editor API) returns:
+
+```json
+{
+  "status": "ok",
+  "service": "gsnake-editor-api"
+}
+```
+
+- `GET http://localhost:3003/health` (editor UI dev server) returns plain text:
+
+```text
+gsnake-editor-ui:ok
+```
+
 ## Test-Level API Validation
 
 `POST /api/test-level` validates payloads against `contracts/level-definition.schema.json`.

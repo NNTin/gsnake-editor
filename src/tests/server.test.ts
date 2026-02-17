@@ -74,6 +74,17 @@ describe("Server API tests", () => {
     });
   });
 
+  describe("GET /health", () => {
+    it("should return a deterministic API health contract", async () => {
+      const response = await request(app).get("/health").expect(200);
+
+      expect(response.body).toEqual({
+        status: "ok",
+        service: "gsnake-editor-api",
+      });
+    });
+  });
+
   describe("POST /api/test-level", () => {
     it("should return success with { success: true }", async () => {
       const response = await request(app).post("/api/test-level").send(validLevelData).expect(200);
