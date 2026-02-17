@@ -5,22 +5,42 @@ import { validateLevelPayload } from "./src/server/levelDefinitionValidator";
 const app = express();
 const PORT = 3001;
 const ALLOWED_METHODS = ["GET", "POST"] as const;
+const CORS_NOT_ALLOWED_ERROR = "Not allowed by CORS";
+const ALLOWED_ORIGINS_ENV = "GSNAKE_EDITOR_ALLOWED_ORIGINS";
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:3003",
+  "http://127.0.0.1:3003",
+] as const;
 
-// Enable CORS for localhost development (allow all localhost ports)
+function resolveAllowedCorsOrigins(rawOrigins = process.env[ALLOWED_ORIGINS_ENV]): string[] {
+  if (!rawOrigins?.trim()) {
+    return [...DEFAULT_ALLOWED_ORIGINS];
+  }
+
+  const parsedOrigins = rawOrigins
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
+  return parsedOrigins.length > 0 ? parsedOrigins : [...DEFAULT_ALLOWED_ORIGINS];
+}
+
+// Enable CORS for known local development origins.
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      // Allow all localhost origins
-      if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+      if (resolveAllowedCorsOrigins().includes(origin)) {
         return callback(null, true);
       }
 
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error(CORS_NOT_ALLOWED_ERROR));
     },
-    methods: ["GET", "POST"],
+    methods: [...ALLOWED_METHODS],
     credentials: true,
   })
 );
@@ -92,6 +112,10 @@ app.all("/api/test-level", (_req, res) => {
 
 app.use(
   (error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (error instanceof Error && error.message === CORS_NOT_ALLOWED_ERROR) {
+      return res.status(403).json({ error: CORS_NOT_ALLOWED_ERROR });
+    }
+
     if (error instanceof SyntaxError && "status" in error) {
       return res.status(400).json({ error: "Malformed JSON payload" });
     }
@@ -104,7 +128,7 @@ function resetTestLevelForTests(): void {
 }
 
 // Export app for testing
-export { app, resetTestLevelForTests };
+export { app, resetTestLevelForTests, resolveAllowedCorsOrigins };
 
 // Start the server only when run directly (not when imported for testing)
 // Check if this module is the main entry point

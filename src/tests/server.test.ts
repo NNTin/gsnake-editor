@@ -1,9 +1,10 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app, resetTestLevelForTests } from "../../server";
 
 describe("Server API tests", () => {
+  const originalAllowedCorsOrigins = process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS;
   const validLevelData = {
     id: 999999,
     name: "Test Level",
@@ -25,6 +26,52 @@ describe("Server API tests", () => {
 
   beforeEach(() => {
     resetTestLevelForTests();
+    delete process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS;
+  });
+
+  afterAll(() => {
+    if (originalAllowedCorsOrigins === undefined) {
+      delete process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS;
+      return;
+    }
+    process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS = originalAllowedCorsOrigins;
+  });
+
+  describe("CORS origin policy", () => {
+    it("should allow a default configured origin", async () => {
+      const origin = "http://localhost:3003";
+      const response = await request(app).get("/api/test-level").set("Origin", origin).expect(404);
+
+      expect(response.headers["access-control-allow-origin"]).toBe(origin);
+    });
+
+    it("should reject a localhost origin that is not explicitly allowed", async () => {
+      const response = await request(app)
+        .get("/api/test-level")
+        .set("Origin", "http://localhost:3999")
+        .expect(403);
+
+      expect(response.body).toEqual({ error: "Not allowed by CORS" });
+      expect(response.headers["access-control-allow-origin"]).toBeUndefined();
+    });
+
+    it("should allow configured origins and reject defaults when overridden", async () => {
+      process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS = "http://localhost:4321,http://127.0.0.1:4321";
+
+      const allowedResponse = await request(app)
+        .get("/api/test-level")
+        .set("Origin", "http://localhost:4321")
+        .expect(404);
+
+      expect(allowedResponse.headers["access-control-allow-origin"]).toBe("http://localhost:4321");
+
+      const rejectedResponse = await request(app)
+        .get("/api/test-level")
+        .set("Origin", "http://localhost:3003")
+        .expect(403);
+
+      expect(rejectedResponse.body).toEqual({ error: "Not allowed by CORS" });
+    });
   });
 
   describe("POST /api/test-level", () => {
