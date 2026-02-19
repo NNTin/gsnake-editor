@@ -171,26 +171,7 @@
   }
 
   function handleEntitySelect(event: CustomEvent<EntityType>) {
-    const previousEntity = selectedEntity;
     selectedEntity = event.detail;
-
-    // FIX BUG #2: When switching TO snake tool and there's already a snake, clear it to start fresh
-    if (previousEntity !== 'snake' && selectedEntity === 'snake' && snakeSegments.length > 0) {
-      console.log(`Clearing previous snake with ${snakeSegments.length} segments to start a new one`);
-
-      // Clear all snake segments from the grid
-      for (const segment of snakeSegments) {
-        cells[segment.row][segment.col].entity = null;
-        cells[segment.row][segment.col].isSnakeSegment = false;
-        cells[segment.row][segment.col].snakeSegmentIndex = undefined;
-      }
-
-      // Clear the segments array
-      snakeSegments = [];
-      cells = cells; // Trigger reactivity
-
-      console.log('Previous snake cleared, ready to draw a new snake');
-    }
 
     console.log('Selected entity:', selectedEntity);
   }

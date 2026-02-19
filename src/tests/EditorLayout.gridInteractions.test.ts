@@ -106,4 +106,27 @@ describe("EditorLayout grid interactions", () => {
     expect(redoButton).toBeDisabled();
     expect(getGridCell(container, 1, 1)).not.toHaveClass("has-entity");
   });
+
+  it("does not clear existing snake segments when reselecting the snake tool", async () => {
+    const { container } = render(EditorLayout, {
+      gridWidth: 5,
+      gridHeight: 5,
+      initialLevelData: null,
+    });
+
+    await fireEvent.click(getGridCell(container, 0, 0));
+    await fireEvent.click(getGridCell(container, 0, 1));
+
+    expect(getGridCell(container, 0, 0)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 0, 1)).toHaveClass("is-snake-segment");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Snake" }));
+
+    expect(getGridCell(container, 0, 0)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 0, 0)).toHaveTextContent("H");
+    expect(getGridCell(container, 0, 1)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 0, 1)).toHaveTextContent("1");
+    expect(container.querySelectorAll(".cell.is-snake-segment")).toHaveLength(2);
+  });
 });
