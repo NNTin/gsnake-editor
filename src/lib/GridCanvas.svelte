@@ -110,6 +110,7 @@
           style="width: {CELL_SIZE}px; height: {CELL_SIZE}px;"
           data-row={cell.row}
           data-col={cell.col}
+          data-snake-segment-index={cell.snakeSegmentIndex === undefined ? '' : cell.snakeSegmentIndex}
           on:click={(e) => handleCellClick(cell.row, cell.col, e.shiftKey)}
           on:keydown={(e) => e.key === 'Enter' && handleCellClick(cell.row, cell.col, e.shiftKey)}
           on:dragover={handleDragOver}

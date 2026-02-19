@@ -57,6 +57,17 @@
     }
   }
 
+  function clearCell(row: number, col: number): void {
+    cells[row][col].entity = null;
+    cells[row][col].isSnakeSegment = false;
+    cells[row][col].snakeSegmentIndex = undefined;
+  }
+
+  function setCellEntity(row: number, col: number, entity: EntityType | null): void {
+    clearCell(row, col);
+    cells[row][col].entity = entity;
+  }
+
   // Initialize grid cells
   let cells: GridCell[][] = createEmptyGrid(gridWidth, gridHeight);
 
@@ -239,9 +250,7 @@
       if (existingSegmentIndex === -1) {
         // Clear any non-snake entity at this position
         if (cells[row][col].entity !== null && cells[row][col].entity !== 'snake') {
-          cells[row][col].entity = null;
-          cells[row][col].isSnakeSegment = false;
-          cells[row][col].snakeSegmentIndex = undefined;
+          clearCell(row, col);
         }
 
         // Add to snake segments
@@ -279,7 +288,7 @@
         for (let r = 0; r < cells.length; r++) {
           for (let c = 0; c < cells[r].length; c++) {
             if (cells[r][c].entity === 'exit' && !(r === row && c === col)) {
-              cells[r][c].entity = null;
+              clearCell(r, c);
               console.log(`Removed previous exit at (${r}, ${c}) via drag-drop`);
             }
           }
@@ -287,9 +296,7 @@
       }
 
       // Place dropped entity at cell (replaces existing entity if present)
-      cells[row][col].entity = entityType;
-      cells[row][col].isSnakeSegment = false;
-      cells[row][col].snakeSegmentIndex = undefined;
+      setCellEntity(row, col, entityType);
 
       // Trigger reactivity
       cells = cells;
@@ -333,9 +340,7 @@
       }
 
       // Clear the cell
-      cells[row][col].entity = null;
-      cells[row][col].isSnakeSegment = false;
-      cells[row][col].snakeSegmentIndex = undefined;
+      clearCell(row, col);
 
       // Trigger reactivity
       cells = cells;
@@ -362,9 +367,7 @@
 
       // Clear any non-snake entity at this position
       if (cells[row][col].entity !== null && cells[row][col].entity !== 'snake') {
-        cells[row][col].entity = null;
-        cells[row][col].isSnakeSegment = false;
-        cells[row][col].snakeSegmentIndex = undefined;
+        clearCell(row, col);
       }
 
       // Add to snake segments
@@ -407,7 +410,7 @@
         for (let r = 0; r < cells.length; r++) {
           for (let c = 0; c < cells[r].length; c++) {
             if (cells[r][c].entity === 'exit' && !(r === row && c === col)) {
-              cells[r][c].entity = null;
+              clearCell(r, c);
               console.log(`Removed previous exit at (${r}, ${c})`);
             }
           }
@@ -415,9 +418,7 @@
       }
 
       // Place selected entity at clicked cell (replaces existing entity if present)
-      cells[row][col].entity = selectedEntity;
-      cells[row][col].isSnakeSegment = false;
-      cells[row][col].snakeSegmentIndex = undefined;
+      setCellEntity(row, col, selectedEntity);
 
       // Trigger reactivity
       cells = cells;

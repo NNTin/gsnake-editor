@@ -68,6 +68,31 @@ describe("EditorLayout grid interactions", () => {
     expect(container.querySelectorAll(".cell.is-snake-segment")).toHaveLength(3);
   });
 
+  it("clears snakeSegmentIndex metadata when snake cells are replaced", async () => {
+    const { container } = render(EditorLayout, {
+      gridWidth: 5,
+      gridHeight: 5,
+      initialLevelData: null,
+    });
+
+    const snakeHead = getGridCell(container, 0, 0);
+    const snakeTail = getGridCell(container, 0, 1);
+
+    await fireEvent.click(snakeHead);
+    await fireEvent.click(snakeTail);
+
+    expect(snakeHead).toHaveAttribute("data-snake-segment-index", "0");
+    expect(snakeTail).toHaveAttribute("data-snake-segment-index", "1");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+    await fireEvent.click(snakeHead);
+
+    expect(snakeHead).not.toHaveClass("is-snake-segment");
+    expect(snakeHead).toHaveAttribute("data-snake-segment-index", "");
+    expect(snakeTail).toHaveAttribute("data-snake-segment-index", "0");
+    expect(snakeTail).toHaveTextContent("H");
+  });
+
   it("maintains multi-step undo/redo history and clears redo after a new action", async () => {
     const { container } = render(EditorLayout, {
       gridWidth: 5,
