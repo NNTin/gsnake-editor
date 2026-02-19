@@ -5,7 +5,8 @@
   import SaveLevelModal from './SaveLevelModal.svelte';
   import HelpModal from './HelpModal.svelte';
   import type { EntityType, GridCell, Direction, LevelData, Position } from './types';
-  import { buildLevelExportPayload, generateLevelId, isValidLevelId } from './levelModel';
+  import { buildLevelExportPayload, generateLevelId } from './levelModel';
+  import { parseAndValidateLevelFileData } from './levelFileValidation';
   import { onMount, createEventDispatcher, tick } from 'svelte';
   import toast from 'svelte-5-french-toast';
 
@@ -476,26 +477,7 @@
 
       try {
         const text = await file.text();
-        const data = JSON.parse(text) as LevelData;
-
-        // Validate required fields
-        if (!isValidLevelId(data.id)) {
-          throw new Error('Invalid level format: id must be a uint32 number');
-        }
-        if (!data.gridSize || typeof data.gridSize.width !== 'number' || typeof data.gridSize.height !== 'number') {
-          throw new Error('Invalid level format: missing or invalid gridSize');
-        }
-        if (!Array.isArray(data.snake) || data.snake.length === 0) {
-          throw new Error('Invalid level format: missing or invalid snake');
-        }
-        if (!data.snakeDirection) {
-          throw new Error('Invalid level format: missing snakeDirection');
-        }
-
-        // Validate grid dimensions
-        if (data.gridSize.width < 5 || data.gridSize.width > 50 || data.gridSize.height < 5 || data.gridSize.height > 50) {
-          throw new Error('Invalid grid dimensions: width and height must be between 5 and 50');
-        }
+        const data = parseAndValidateLevelFileData(text);
 
         // Reset undo/redo history
         undoStack = [];

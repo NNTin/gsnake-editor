@@ -3,7 +3,7 @@
   import GridSizeModal from './lib/GridSizeModal.svelte'
   import EditorLayout from './lib/EditorLayout.svelte'
   import SpriteLoader from './lib/SpriteLoader.svelte'
-  import { isValidLevelId } from './lib/levelModel'
+  import { parseAndValidateLevelFileData } from './lib/levelFileValidation'
   import type { LevelData } from './lib/types'
   import toast, { Toaster } from 'svelte-5-french-toast'
 
@@ -23,26 +23,7 @@
 
     try {
       const text = await file.text();
-      const data = JSON.parse(text) as LevelData;
-
-      // Validate required fields
-      if (!isValidLevelId(data.id)) {
-        throw new Error('Invalid level format: id must be a uint32 number');
-      }
-      if (!data.gridSize || typeof data.gridSize.width !== 'number' || typeof data.gridSize.height !== 'number') {
-        throw new Error('Invalid level format: missing or invalid gridSize');
-      }
-      if (!Array.isArray(data.snake) || data.snake.length === 0) {
-        throw new Error('Invalid level format: missing or invalid snake');
-      }
-      if (!data.snakeDirection) {
-        throw new Error('Invalid level format: missing snakeDirection');
-      }
-
-      // Validate grid dimensions
-      if (data.gridSize.width < 5 || data.gridSize.width > 50 || data.gridSize.height < 5 || data.gridSize.height > 50) {
-        throw new Error('Invalid grid dimensions: width and height must be between 5 and 50');
-      }
+      const data = parseAndValidateLevelFileData(text);
 
       // Successfully loaded - update state and show editor
       gridWidth = data.gridSize.width;
