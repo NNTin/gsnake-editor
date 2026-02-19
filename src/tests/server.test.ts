@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
-import { app, resetTestLevelForTests } from "../../server";
+import { app, resetTestLevelForTests, resolveAllowedCorsOrigins } from "../../server";
 
 describe("Server API tests", () => {
   const originalAllowedCorsOrigins = process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS;
@@ -55,22 +55,33 @@ describe("Server API tests", () => {
       expect(response.headers["access-control-allow-origin"]).toBeUndefined();
     });
 
-    it("should allow configured origins and reject defaults when overridden", async () => {
+    it("should keep startup allowlist even if env changes at runtime", async () => {
       process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS = "http://localhost:4321,http://127.0.0.1:4321";
 
-      const allowedResponse = await request(app)
+      const defaultOriginResponse = await request(app)
         .get("/api/test-level")
-        .set("Origin", "http://localhost:4321")
+        .set("Origin", "http://localhost:3003")
         .expect(404);
 
-      expect(allowedResponse.headers["access-control-allow-origin"]).toBe("http://localhost:4321");
+      expect(defaultOriginResponse.headers["access-control-allow-origin"]).toBe(
+        "http://localhost:3003"
+      );
 
       const rejectedResponse = await request(app)
         .get("/api/test-level")
-        .set("Origin", "http://localhost:3003")
+        .set("Origin", "http://localhost:4321")
         .expect(403);
 
       expect(rejectedResponse.body).toEqual({ error: "Not allowed by CORS" });
+    });
+  });
+
+  describe("resolveAllowedCorsOrigins", () => {
+    it("should parse configured origins from a comma-separated string", () => {
+      expect(resolveAllowedCorsOrigins("http://localhost:4321, http://127.0.0.1:4321, ")).toEqual([
+        "http://localhost:4321",
+        "http://127.0.0.1:4321",
+      ]);
     });
   });
 

@@ -31,6 +31,8 @@ function resolveAllowedCorsOrigins(rawOrigins = process.env[ALLOWED_ORIGINS_ENV]
   return parsedOrigins.length > 0 ? parsedOrigins : [...DEFAULT_ALLOWED_ORIGINS];
 }
 
+const allowedCorsOrigins = Object.freeze(resolveAllowedCorsOrigins());
+
 // Enable CORS for known local development origins.
 app.use(
   cors({
@@ -38,7 +40,7 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      if (resolveAllowedCorsOrigins().includes(origin)) {
+      if (allowedCorsOrigins.includes(origin)) {
         return callback(null, true);
       }
 
