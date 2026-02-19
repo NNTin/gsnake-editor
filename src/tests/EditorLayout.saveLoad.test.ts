@@ -227,6 +227,79 @@ describe("EditorLayout save/load workflow", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it("preserves imported entities across sequential loads with different grid sizes", async () => {
+    const firstLoadedLevel: LevelData = {
+      id: 100,
+      name: "First Loaded Level",
+      gridSize: {
+        width: 6,
+        height: 5,
+      },
+      snake: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+      ],
+      obstacles: [{ x: 5, y: 4 }],
+      food: [{ x: 2, y: 2 }],
+      exit: { x: 4, y: 3 },
+      snakeDirection: "East",
+      floatingFood: [],
+      fallingFood: [],
+      stones: [],
+      spikes: [],
+    };
+
+    const secondLoadedLevel: LevelData = {
+      id: 101,
+      name: "Second Loaded Level",
+      gridSize: {
+        width: 5,
+        height: 7,
+      },
+      snake: [{ x: 4, y: 6 }],
+      obstacles: [],
+      food: [{ x: 1, y: 3 }],
+      exit: { x: 0, y: 6 },
+      snakeDirection: "West",
+      floatingFood: [],
+      fallingFood: [],
+      stones: [{ x: 2, y: 0 }],
+      spikes: [{ x: 4, y: 0 }],
+    };
+
+    const { container } = render(EditorLayout, {
+      gridWidth: 9,
+      gridHeight: 9,
+      initialLevelData: null,
+    });
+
+    await loadLevelFromFile(JSON.stringify(firstLoadedLevel), "first-loaded-level.json");
+
+    await waitFor(() => {
+      expect(container.querySelectorAll(".cell")).toHaveLength(30);
+    });
+
+    expect(getGridCell(container, 0, 0)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 0, 1)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 4, 5)).toHaveClass("has-entity");
+    expect(getGridCell(container, 2, 2)).toHaveClass("has-entity");
+    expect(getGridCell(container, 3, 4)).toHaveClass("has-entity");
+
+    await loadLevelFromFile(JSON.stringify(secondLoadedLevel), "second-loaded-level.json");
+
+    await waitFor(() => {
+      expect(container.querySelectorAll(".cell")).toHaveLength(35);
+      expect(screen.getByRole("combobox")).toHaveValue("west");
+    });
+
+    expect(getGridCell(container, 6, 4)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 3, 1)).toHaveClass("has-entity");
+    expect(getGridCell(container, 6, 0)).toHaveClass("has-entity");
+    expect(getGridCell(container, 0, 2)).toHaveClass("has-entity");
+    expect(getGridCell(container, 0, 4)).toHaveClass("has-entity");
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
   it("rejects out-of-bounds coordinates instead of partially loading and dropping them", async () => {
     const { container } = render(EditorLayout, {
       gridWidth: 6,

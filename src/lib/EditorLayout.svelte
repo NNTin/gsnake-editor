@@ -7,7 +7,7 @@
   import type { EntityType, GridCell, Direction, LevelData, Position } from './types';
   import { buildLevelExportPayload, generateLevelId } from './levelModel';
   import { parseAndValidateLevelFileData } from './levelFileValidation';
-  import { onMount, createEventDispatcher, tick } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import toast from 'svelte-5-french-toast';
 
   const dispatch = createEventDispatcher<{
@@ -30,21 +30,9 @@
   const TEST_LEVEL_NAME = 'Test Level';
   const TEST_LEVEL_DIFFICULTY = 'medium' as const;
 
-  // Initialize grid cells
-  let cells: GridCell[][] = Array.from({ length: gridHeight }, (_, row) =>
-    Array.from({ length: gridWidth }, (_, col) => ({
-      row,
-      col,
-      entity: null as EntityType | null,
-      isSnakeSegment: false,
-      snakeSegmentIndex: undefined as number | undefined
-    }))
-  );
-
-  // Reactive statement to reinitialize grid when dimensions change
-  $: if (gridWidth || gridHeight) {
-    cells = Array.from({ length: gridHeight }, (_, row) =>
-      Array.from({ length: gridWidth }, (_, col) => ({
+  function createEmptyGrid(width: number, height: number): GridCell[][] {
+    return Array.from({ length: height }, (_, row) =>
+      Array.from({ length: width }, (_, col) => ({
         row,
         col,
         entity: null as EntityType | null,
@@ -53,6 +41,14 @@
       }))
     );
   }
+
+  function resetGrid(width: number, height: number): void {
+    cells = createEmptyGrid(width, height);
+    snakeSegments = [];
+  }
+
+  // Initialize grid cells
+  let cells: GridCell[][] = createEmptyGrid(gridWidth, gridHeight);
 
   // Helper function to map entity type from position arrays
   function isInGridBounds(position: Position): boolean {
@@ -97,16 +93,7 @@
     assertAllCoordinatesInBounds(data);
 
     // Clear existing state
-    snakeSegments = [];
-    cells = Array.from({ length: gridHeight }, (_, row) =>
-      Array.from({ length: gridWidth }, (_, col) => ({
-        row,
-        col,
-        entity: null as EntityType | null,
-        isSnakeSegment: false,
-        snakeSegmentIndex: undefined as number | undefined
-      }))
-    );
+    resetGrid(gridWidth, gridHeight);
 
     // Helper to place entities
     const placeEntity = (positions: Position[], entityType: EntityType) => {
@@ -483,10 +470,9 @@
         undoStack = [];
         redoStack = [];
 
-        // Update grid dimensions first so the reactive grid reset runs before entity placement.
+        // Apply grid dimensions before explicit reset+placement for loaded entities.
         gridWidth = data.gridSize.width;
         gridHeight = data.gridSize.height;
-        await tick();
 
         // Load the level data
         placeEntitiesFromLevelData(data);
