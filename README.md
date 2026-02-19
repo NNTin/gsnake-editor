@@ -19,6 +19,8 @@ Set `FORCE_GIT_DEPS=1` to force standalone mode (used by CI).
 
 ## Environment Variables
 
+- `VITE_GSNAKE_API_URL` - base URL for editor test-level API requests (`POST /api/test-level`)
+  - default: `http://localhost:3001`
 - `VITE_GSNAKE_WEB_URL` - target URL for test-level launch flow
   - default: `http://localhost:3000`
 - `GSNAKE_EDITOR_ALLOWED_ORIGINS` - comma-separated exact origins allowed by editor API CORS
@@ -27,6 +29,7 @@ Set `FORCE_GIT_DEPS=1` to force standalone mode (used by CI).
 Example `.env`:
 
 ```bash
+VITE_GSNAKE_API_URL=http://localhost:3001
 VITE_GSNAKE_WEB_URL=http://localhost:3000
 GSNAKE_EDITOR_ALLOWED_ORIGINS=http://localhost:3003,http://localhost:3000
 ```

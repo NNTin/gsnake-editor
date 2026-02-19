@@ -29,6 +29,8 @@
   const TEST_LEVEL_ID = 999999;
   const TEST_LEVEL_NAME = 'Test Level';
   const TEST_LEVEL_DIFFICULTY = 'medium' as const;
+  const DEFAULT_TEST_API_BASE_URL = 'http://localhost:3001';
+  const TEST_LEVEL_API_PATH = '/api/test-level';
 
   function createEmptyGrid(width: number, height: number): GridCell[][] {
     return Array.from({ length: height }, (_, row) =>
@@ -538,10 +540,18 @@
     console.log('Snake direction changed to:', snakeDirection);
   }
 
+  function getTestLevelApiEndpoint(): string {
+    const configuredApiBaseUrl =
+      import.meta.env.VITE_GSNAKE_API_URL || DEFAULT_TEST_API_BASE_URL;
+    const normalizedApiBaseUrl = configuredApiBaseUrl.replace(/\/+$/, '');
+    return `${normalizedApiBaseUrl}${TEST_LEVEL_API_PATH}`;
+  }
+
   async function handleTest() {
     console.log('Test clicked - preparing level for testing');
 
     isTestingLevel = true; // Start loading state
+    const testApiEndpoint = getTestLevelApiEndpoint();
 
     try {
       const levelData = buildLevelExportPayload({
@@ -556,7 +566,7 @@
       });
 
       // POST level to backend server
-      const response = await fetch('http://localhost:3001/api/test-level', {
+      const response = await fetch(testApiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -585,7 +595,7 @@
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(
-        `Failed to test level: ${message}. Make sure the test server is running on port 3001 (npm run server)`,
+        `Failed to test level: ${message}. Ensure the test API is reachable at ${testApiEndpoint}. Set VITE_GSNAKE_API_URL or run the local test server on port 3001 (npm run server).`,
         {
           duration: 5000,
           style: 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'

@@ -103,6 +103,7 @@ describe("EditorLayout save/load workflow", () => {
       configurable: true,
       writable: true,
     });
+    vi.unstubAllEnvs();
   });
 
   it("opens save modal and exports a generated level payload", async () => {
@@ -361,6 +362,8 @@ describe("EditorLayout save/load workflow", () => {
   });
 
   it("posts a canonical export payload when testing a level", async () => {
+    vi.stubEnv("VITE_GSNAKE_API_URL", "");
+
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       async json() {
@@ -453,6 +456,90 @@ describe("EditorLayout save/load workflow", () => {
         expect.any(Object)
       );
       expect(toastMock.error).not.toHaveBeenCalled();
+    } finally {
+      windowOpenSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("uses configured VITE_GSNAKE_API_URL for test-level uploads", async () => {
+    vi.stubEnv("VITE_GSNAKE_API_URL", "https://api.example.com/editor/");
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        return { success: true };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    try {
+      const { container } = render(EditorLayout, {
+        gridWidth: 4,
+        gridHeight: 4,
+        initialLevelData: null,
+      });
+
+      await fireEvent.click(getGridCell(container, 0, 0));
+      await fireEvent.click(screen.getByRole("button", { name: "Test" }));
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api.example.com/editor/api/test-level",
+        expect.objectContaining({
+          method: "POST",
+        })
+      );
+      expect(windowOpenSpy).toHaveBeenCalledWith("http://localhost:3000?test=true", "_blank");
+      expect(toastMock.error).not.toHaveBeenCalled();
+    } finally {
+      windowOpenSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("includes resolved test endpoint guidance when test upload fails", async () => {
+    vi.stubEnv("VITE_GSNAKE_API_URL", "http://localhost:3900/");
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      async json() {
+        return { error: "unavailable" };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    try {
+      const { container } = render(EditorLayout, {
+        gridWidth: 4,
+        gridHeight: 4,
+        initialLevelData: null,
+      });
+
+      await fireEvent.click(getGridCell(container, 0, 0));
+      await fireEvent.click(screen.getByRole("button", { name: "Test" }));
+
+      await waitFor(() => {
+        expect(toastMock.error).toHaveBeenCalled();
+      });
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Ensure the test API is reachable at http://localhost:3900/api/test-level."
+        ),
+        expect.any(Object)
+      );
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Set VITE_GSNAKE_API_URL"),
+        expect.any(Object)
+      );
+      expect(windowOpenSpy).not.toHaveBeenCalled();
     } finally {
       windowOpenSpy.mockRestore();
       vi.unstubAllGlobals();
