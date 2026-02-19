@@ -247,6 +247,105 @@ describe("EditorLayout save/load workflow", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it("posts a canonical export payload when testing a level", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        return { success: true };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    try {
+      const { container } = render(EditorLayout, {
+        gridWidth: 5,
+        gridHeight: 5,
+        initialLevelData: null,
+      });
+
+      await fireEvent.click(getGridCell(container, 0, 0));
+      await fireEvent.click(getGridCell(container, 0, 1));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+      await fireEvent.click(getGridCell(container, 1, 1));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Floating Food" }));
+      await fireEvent.click(getGridCell(container, 1, 2));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Falling Food" }));
+      await fireEvent.click(getGridCell(container, 1, 3));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Stone" }));
+      await fireEvent.click(getGridCell(container, 2, 0));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Spike" }));
+      await fireEvent.click(getGridCell(container, 2, 1));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Obstacle" }));
+      await fireEvent.click(getGridCell(container, 2, 2));
+
+      await fireEvent.click(screen.getByRole("button", { name: "Exit" }));
+      await fireEvent.click(getGridCell(container, 4, 4));
+
+      await fireEvent.change(screen.getByRole("combobox"), {
+        target: { value: "north" },
+      });
+
+      await fireEvent.click(screen.getByRole("button", { name: "Test" }));
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        "http://localhost:3001/api/test-level",
+        expect.objectContaining({
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+      );
+
+      const requestBody = fetchMock.mock.calls[0]?.[1]?.body;
+      expect(typeof requestBody).toBe("string");
+      const payload = JSON.parse(requestBody as string);
+
+      expect(payload).toMatchObject({
+        id: 999999,
+        name: "Test Level",
+        difficulty: "medium",
+        gridSize: {
+          width: 5,
+          height: 5,
+        },
+        snake: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+        ],
+        obstacles: [{ x: 2, y: 2 }],
+        food: [{ x: 1, y: 1 }],
+        floatingFood: [{ x: 2, y: 1 }],
+        fallingFood: [{ x: 3, y: 1 }],
+        stones: [{ x: 0, y: 2 }],
+        spikes: [{ x: 1, y: 2 }],
+        exit: { x: 4, y: 4 },
+        snakeDirection: "North",
+        totalFood: 3,
+      });
+      expect(windowOpenSpy).toHaveBeenCalledWith("http://localhost:3000?test=true", "_blank");
+      expect(toastMock.success).toHaveBeenCalledWith(
+        "Test level uploaded successfully! Opening game in new tab...",
+        expect.any(Object)
+      );
+      expect(toastMock.error).not.toHaveBeenCalled();
+    } finally {
+      windowOpenSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("shows user-facing error feedback when loading an invalid level payload", async () => {
     render(EditorLayout, {
       gridWidth: 6,
