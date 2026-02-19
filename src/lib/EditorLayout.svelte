@@ -394,11 +394,35 @@
     input.type = 'file';
     input.accept = '.json';
     input.style.display = 'none';
+    const cleanupInput = () => {
+      input.removeEventListener('change', handleInputChange);
+      input.removeEventListener('cancel', handleInputCancel);
+      window.removeEventListener('focus', handleWindowFocus);
+      if (input.parentNode) {
+        input.parentNode.removeChild(input);
+      }
+    };
 
-    input.onchange = async (e) => {
+    const handleWindowFocus = () => {
+      // Browsers without `cancel` support still focus the window when the picker closes.
+      window.setTimeout(() => {
+        if (!input.files || input.files.length === 0) {
+          cleanupInput();
+        }
+      }, 0);
+    };
+
+    const handleInputCancel = () => {
+      cleanupInput();
+    };
+
+    const handleInputChange = async (e: Event) => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
-      if (!file) return;
+      if (!file) {
+        cleanupInput();
+        return;
+      }
 
       isLoadingFile = true; // Start loading state
 
@@ -445,12 +469,15 @@
           style: 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
         });
         console.error('Failed to load level:', error);
-      } finally{
+      } finally {
         isLoadingFile = false; // End loading state
-        // Clean up the input element
-        document.body.removeChild(input);
+        cleanupInput();
       }
     };
+
+    input.addEventListener('change', handleInputChange);
+    input.addEventListener('cancel', handleInputCancel);
+    window.addEventListener('focus', handleWindowFocus);
 
     // Add to DOM and trigger click
     document.body.appendChild(input);

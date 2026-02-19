@@ -227,6 +227,26 @@ describe("EditorLayout save/load workflow", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it("cleans up hidden file input when load dialog is canceled", async () => {
+    render(EditorLayout, {
+      gridWidth: 6,
+      gridHeight: 6,
+      initialLevelData: null,
+    });
+
+    await fireEvent.click(screen.getByRole("button", { name: "Load" }));
+
+    expect(document.body.querySelectorAll('input[type="file"]')).toHaveLength(1);
+
+    window.dispatchEvent(new Event("focus"));
+
+    await waitFor(() => {
+      expect(document.body.querySelector('input[type="file"]')).toBeNull();
+    });
+
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
   it("shows user-facing error feedback when loading an invalid level payload", async () => {
     render(EditorLayout, {
       gridWidth: 6,
