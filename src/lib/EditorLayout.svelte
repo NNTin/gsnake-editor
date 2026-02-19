@@ -29,6 +29,7 @@
   const TEST_LEVEL_ID = 999999;
   const TEST_LEVEL_NAME = 'Test Level';
   const TEST_LEVEL_DIFFICULTY = 'medium' as const;
+  const DEFAULT_SNAKE_DIRECTION: Direction = 'east';
   const DEFAULT_TEST_API_BASE_URL = 'http://localhost:3001';
   const TEST_LEVEL_API_PATH = '/api/test-level';
 
@@ -47,6 +48,13 @@
   function resetGrid(width: number, height: number): void {
     cells = createEmptyGrid(width, height);
     snakeSegments = [];
+    snakeDirection = DEFAULT_SNAKE_DIRECTION;
+  }
+
+  function resetSnakeDirectionIfSnakeCleared(): void {
+    if (snakeSegments.length === 0) {
+      snakeDirection = DEFAULT_SNAKE_DIRECTION;
+    }
   }
 
   // Initialize grid cells
@@ -261,6 +269,7 @@
           const seg = snakeSegments[i];
           cells[seg.row][seg.col].snakeSegmentIndex = i;
         }
+        resetSnakeDirectionIfSnakeCleared();
         snakeSegments = snakeSegments;
       }
 
@@ -318,6 +327,7 @@
             const seg = snakeSegments[i];
             cells[seg.row][seg.col].snakeSegmentIndex = i;
           }
+          resetSnakeDirectionIfSnakeCleared();
           snakeSegments = snakeSegments;
         }
       }
@@ -387,6 +397,7 @@
           const seg = snakeSegments[i];
           cells[seg.row][seg.col].snakeSegmentIndex = i;
         }
+        resetSnakeDirectionIfSnakeCleared();
         snakeSegments = snakeSegments;
       }
 

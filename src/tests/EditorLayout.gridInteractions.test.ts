@@ -129,4 +129,33 @@ describe("EditorLayout grid interactions", () => {
     expect(getGridCell(container, 0, 1)).toHaveTextContent("1");
     expect(container.querySelectorAll(".cell.is-snake-segment")).toHaveLength(2);
   });
+
+  it("resets direction to east when edits clear all snake segments before redraw", async () => {
+    const { container } = render(EditorLayout, {
+      gridWidth: 5,
+      gridHeight: 5,
+      initialLevelData: null,
+    });
+
+    await fireEvent.click(getGridCell(container, 0, 0));
+    await fireEvent.click(getGridCell(container, 0, 1));
+
+    const directionSelect = screen.getByRole("combobox");
+    await fireEvent.change(directionSelect, { target: { value: "south" } });
+    expect(directionSelect).toHaveValue("south");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+    await fireEvent.click(getGridCell(container, 0, 0));
+    await fireEvent.click(getGridCell(container, 0, 1));
+
+    expect(container.querySelectorAll(".cell.is-snake-segment")).toHaveLength(0);
+    expect(directionSelect).toHaveValue("east");
+
+    await fireEvent.click(screen.getByRole("button", { name: "Snake" }));
+    await fireEvent.click(getGridCell(container, 1, 1));
+
+    expect(getGridCell(container, 1, 1)).toHaveClass("is-snake-segment");
+    expect(getGridCell(container, 1, 1)).toHaveTextContent("H");
+    expect(directionSelect).toHaveValue("east");
+  });
 });
