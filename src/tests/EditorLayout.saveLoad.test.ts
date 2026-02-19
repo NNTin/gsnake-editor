@@ -227,6 +227,46 @@ describe("EditorLayout save/load workflow", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it("rejects out-of-bounds coordinates instead of partially loading and dropping them", async () => {
+    const { container } = render(EditorLayout, {
+      gridWidth: 6,
+      gridHeight: 6,
+      initialLevelData: null,
+    });
+
+    const outOfBoundsPayload: LevelData = {
+      id: 19,
+      name: "Out Of Bounds",
+      gridSize: {
+        width: 6,
+        height: 6,
+      },
+      snake: [{ x: 1, y: 1 }],
+      obstacles: [],
+      food: [{ x: -1, y: 2 }],
+      exit: { x: 5, y: 5 },
+      snakeDirection: "South",
+      floatingFood: [],
+      fallingFood: [],
+      stones: [],
+      spikes: [],
+    };
+
+    await loadLevelFromFile(JSON.stringify(outOfBoundsPayload), "out-of-bounds-level.json");
+
+    await waitFor(() => {
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "Failed to load level: Unsupported out-of-bounds coordinates for grid 6x6: food[0] at (-1, 2)."
+        ),
+        expect.any(Object)
+      );
+    });
+
+    expect(screen.getByRole("combobox")).toHaveValue("east");
+    expect(container.querySelectorAll(".cell.has-entity")).toHaveLength(0);
+  });
+
   it("cleans up hidden file input when load dialog is canceled", async () => {
     render(EditorLayout, {
       gridWidth: 6,

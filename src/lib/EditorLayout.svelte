@@ -54,7 +54,47 @@
   }
 
   // Helper function to map entity type from position arrays
+  function isInGridBounds(position: Position): boolean {
+    return (
+      position.x >= 0 &&
+      position.x < gridWidth &&
+      position.y >= 0 &&
+      position.y < gridHeight
+    );
+  }
+
+  function assertAllCoordinatesInBounds(data: LevelData): void {
+    const outOfBounds: string[] = [];
+    const collectOutOfBounds = (entityName: string, positions: Position[] = []) => {
+      positions.forEach((position, index) => {
+        if (!isInGridBounds(position)) {
+          outOfBounds.push(`${entityName}[${index}] at (${position.x}, ${position.y})`);
+        }
+      });
+    };
+
+    collectOutOfBounds('snake', data.snake);
+    collectOutOfBounds('obstacles', data.obstacles || []);
+    collectOutOfBounds('food', data.food || []);
+    collectOutOfBounds('stones', data.stones || []);
+    collectOutOfBounds('spikes', data.spikes || []);
+    collectOutOfBounds('floatingFood', data.floatingFood || []);
+    collectOutOfBounds('fallingFood', data.fallingFood || []);
+
+    if (data.exit && !isInGridBounds(data.exit)) {
+      outOfBounds.push(`exit at (${data.exit.x}, ${data.exit.y})`);
+    }
+
+    if (outOfBounds.length > 0) {
+      throw new Error(
+        `Unsupported out-of-bounds coordinates for grid ${gridWidth}x${gridHeight}: ${outOfBounds.join(', ')}`
+      );
+    }
+  }
+
   function placeEntitiesFromLevelData(data: LevelData) {
+    assertAllCoordinatesInBounds(data);
+
     // Clear existing state
     snakeSegments = [];
     cells = Array.from({ length: gridHeight }, (_, row) =>
@@ -70,20 +110,16 @@
     // Helper to place entities
     const placeEntity = (positions: Position[], entityType: EntityType) => {
       positions.forEach(pos => {
-        if (pos.y >= 0 && pos.y < gridHeight && pos.x >= 0 && pos.x < gridWidth) {
-          cells[pos.y][pos.x].entity = entityType;
-        }
+        cells[pos.y][pos.x].entity = entityType;
       });
     };
 
     // Place snake segments
     data.snake.forEach((pos, index) => {
-      if (pos.y >= 0 && pos.y < gridHeight && pos.x >= 0 && pos.x < gridWidth) {
-        cells[pos.y][pos.x].entity = 'snake';
-        cells[pos.y][pos.x].isSnakeSegment = true;
-        cells[pos.y][pos.x].snakeSegmentIndex = index;
-        snakeSegments.push({ row: pos.y, col: pos.x });
-      }
+      cells[pos.y][pos.x].entity = 'snake';
+      cells[pos.y][pos.x].isSnakeSegment = true;
+      cells[pos.y][pos.x].snakeSegmentIndex = index;
+      snakeSegments.push({ row: pos.y, col: pos.x });
     });
 
     // Missing optional arrays must be treated as empty for backward-compatible
@@ -97,7 +133,7 @@
     placeEntity(data.fallingFood || [], 'falling-food');
 
     // Place exit (single entity)
-    if (data.exit && data.exit.y >= 0 && data.exit.y < gridHeight && data.exit.x >= 0 && data.exit.x < gridWidth) {
+    if (data.exit) {
       cells[data.exit.y][data.exit.x].entity = 'exit';
     }
 
@@ -114,7 +150,16 @@
   // Load initial level data if provided
   onMount(() => {
     if (initialLevelData) {
-      placeEntitiesFromLevelData(initialLevelData);
+      try {
+        placeEntitiesFromLevelData(initialLevelData);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error occurred';
+        toast.error(`Failed to load level: ${message}. Please check that the file is a valid gSnake level JSON.`, {
+          duration: 5000,
+          style: 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
+        });
+        console.error('Failed to load initial level:', error);
+      }
     }
   });
 
