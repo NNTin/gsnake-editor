@@ -100,6 +100,18 @@ The editor imports shared styles/assets/components from `gsnake-web-ui`:
 
 When changing shared UI contracts in `gsnake-web-ui`, update `gsnake-editor` in one atomic migration so mixed-theme/mixed-component states are avoided.
 
+### Sprite Trust Boundary
+
+`src/lib/SpriteLoader.svelte` treats `spritesUrl` as a trusted internal asset source and enforces guardrails before mounting sprite markup:
+
+- fetch response must be `2xx`
+- `content-type` must include `image/svg+xml`
+- sprite content is parsed as SVG and sanitized before insertion
+  - blocked nodes: `script`, `foreignObject`, `iframe`, `object`, `embed`
+  - blocked attributes: inline event handlers (`on*`), `style`, `javascript:` URL values, and non-fragment `href`/`xlink:href`
+
+If the payload fails validation, sprite definitions are not mounted and an error is logged.
+
 ## CI
 
 `.github/workflows/ci.yml` runs in standalone mode (`FORCE_GIT_DEPS=1`) to validate vendored snapshot install/build/test behavior.
