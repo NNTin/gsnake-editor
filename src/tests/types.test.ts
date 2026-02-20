@@ -150,5 +150,59 @@ describe("level model", () => {
         })
       ).toThrow("Invalid level format: id must be a uint32 number");
     });
+
+    it("serializes empty snake segments as an empty snake array", () => {
+      const cells = createGrid(2, 2);
+      cells[1][1].entity = "exit";
+
+      const payload = buildLevelExportPayload({
+        levelId: 7,
+        name: "Empty Snake",
+        difficulty: "easy",
+        gridWidth: 2,
+        gridHeight: 2,
+        cells,
+        snakeSegments: [],
+        snakeDirection: "east",
+      });
+
+      expect(payload.snake).toEqual([]);
+      expect(payload.exit).toEqual({ x: 1, y: 1 });
+    });
+
+    it("serializes missing exit as null", () => {
+      const payload = buildLevelExportPayload({
+        levelId: 8,
+        name: "No Exit",
+        difficulty: "hard",
+        gridWidth: 2,
+        gridHeight: 2,
+        cells: createGrid(2, 2),
+        snakeSegments: [{ row: 0, col: 0 }],
+        snakeDirection: "north",
+      });
+
+      expect(payload.exit).toBeNull();
+      expect(payload.snake).toEqual([{ x: 0, y: 0 }]);
+    });
+
+    it("uses the last encountered exit when duplicate exits exist in the grid", () => {
+      const cells = createGrid(3, 2);
+      cells[0][0].entity = "exit";
+      cells[1][2].entity = "exit";
+
+      const payload = buildLevelExportPayload({
+        levelId: 9,
+        name: "Duplicate Exit",
+        difficulty: "medium",
+        gridWidth: 3,
+        gridHeight: 2,
+        cells,
+        snakeSegments: [{ row: 0, col: 1 }],
+        snakeDirection: "south",
+      });
+
+      expect(payload.exit).toEqual({ x: 2, y: 1 });
+    });
   });
 });
