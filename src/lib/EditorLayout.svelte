@@ -559,8 +559,58 @@
     return `${normalizedApiBaseUrl}${TEST_LEVEL_API_PATH}`;
   }
 
+  function calculateValidationData() {
+    let foodCount = 0;
+    let hasExit = false;
+
+    for (let row = 0; row < gridHeight; row++) {
+      for (let col = 0; col < gridWidth; col++) {
+        const cell = cells[row][col];
+        if (
+          cell.entity === 'food' ||
+          cell.entity === 'floating-food' ||
+          cell.entity === 'falling-food'
+        ) {
+          foodCount++;
+        } else if (cell.entity === 'exit') {
+          hasExit = true;
+        }
+      }
+    }
+
+    return {
+      snakeCount: snakeSegments.length,
+      foodCount,
+      hasExit
+    };
+  }
+
+  function getValidationWarnings(currentValidationData: {
+    snakeCount: number;
+    foodCount: number;
+    hasExit: boolean;
+  }): string[] {
+    const warnings = [
+      currentValidationData.snakeCount === 0 ? 'No snake placed - level is invalid' : null,
+      currentValidationData.foodCount === 0 ? 'No food placed - level may not be completable' : null,
+      !currentValidationData.hasExit ? 'No exit placed - level cannot be completed' : null
+    ];
+
+    return warnings.filter(warning => warning !== null) as string[];
+  }
+
   async function handleTest() {
     console.log('Test clicked - preparing level for testing');
+
+    const currentValidationData = calculateValidationData();
+    const validationWarnings = getValidationWarnings(currentValidationData);
+    if (validationWarnings.length > 0) {
+      toast.error(`Cannot test level: ${validationWarnings.join('. ')}.`, {
+        duration: 5000,
+        style: 'background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
+      });
+      return;
+    }
 
     isTestingLevel = true; // Start loading state
     const testApiEndpoint = getTestLevelApiEndpoint();
@@ -628,30 +678,7 @@
   function handleSave() {
     console.log('Save clicked');
 
-    // Calculate validation data
-    let foodCount = 0;
-    let hasExit = false;
-
-    for (let row = 0; row < gridHeight; row++) {
-      for (let col = 0; col < gridWidth; col++) {
-        const cell = cells[row][col];
-        if (
-          cell.entity === 'food' ||
-          cell.entity === 'floating-food' ||
-          cell.entity === 'falling-food'
-        ) {
-          foodCount++;
-        } else if (cell.entity === 'exit') {
-          hasExit = true;
-        }
-      }
-    }
-
-    validationData = {
-      snakeCount: snakeSegments.length,
-      foodCount,
-      hasExit
-    };
+    validationData = calculateValidationData();
 
     showSaveModal = true;
   }

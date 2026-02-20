@@ -462,6 +462,44 @@ describe("EditorLayout save/load workflow", () => {
     }
   });
 
+  it("blocks test upload when required entities are missing", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const windowOpenSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+
+    try {
+      render(EditorLayout, {
+        gridWidth: 4,
+        gridHeight: 4,
+        initialLevelData: null,
+      });
+
+      await fireEvent.click(screen.getByRole("button", { name: "Test" }));
+
+      await waitFor(() => {
+        expect(toastMock.error).toHaveBeenCalled();
+      });
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Cannot test level: No snake placed - level is invalid."),
+        expect.any(Object)
+      );
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("No food placed - level may not be completable."),
+        expect.any(Object)
+      );
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("No exit placed - level cannot be completed."),
+        expect.any(Object)
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(windowOpenSpy).not.toHaveBeenCalled();
+    } finally {
+      windowOpenSpy.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("uses configured VITE_GSNAKE_API_URL for test-level uploads", async () => {
     vi.stubEnv("VITE_GSNAKE_API_URL", "https://api.example.com/editor/");
 
@@ -482,6 +520,10 @@ describe("EditorLayout save/load workflow", () => {
       });
 
       await fireEvent.click(getGridCell(container, 0, 0));
+      await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+      await fireEvent.click(getGridCell(container, 1, 0));
+      await fireEvent.click(screen.getByRole("button", { name: "Exit" }));
+      await fireEvent.click(getGridCell(container, 3, 3));
       await fireEvent.click(screen.getByRole("button", { name: "Test" }));
 
       await waitFor(() => {
@@ -523,6 +565,10 @@ describe("EditorLayout save/load workflow", () => {
       });
 
       await fireEvent.click(getGridCell(container, 0, 0));
+      await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+      await fireEvent.click(getGridCell(container, 1, 0));
+      await fireEvent.click(screen.getByRole("button", { name: "Exit" }));
+      await fireEvent.click(getGridCell(container, 3, 3));
       await fireEvent.click(screen.getByRole("button", { name: "Test" }));
 
       await waitFor(() => {
