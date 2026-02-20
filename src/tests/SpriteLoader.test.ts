@@ -62,8 +62,13 @@ describe("SpriteLoader", () => {
     });
 
     expect(container.querySelector(".sprite-loader svg")).not.toBeInTheDocument();
+    expect(container.querySelector(".sprite-loader-fallback")).toBeInTheDocument();
+    expect(container.querySelector(".sprite-loader-fallback")).toHaveAttribute(
+      "data-sprite-load-error",
+      expect.stringContaining("Unexpected sprites content-type")
+    );
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "Failed to load sprite definitions:",
+      expect.stringContaining("Failed to load sprite definitions from"),
       expect.any(Error)
     );
   });
@@ -86,8 +91,34 @@ describe("SpriteLoader", () => {
     });
 
     expect(container.querySelector(".sprite-loader svg")).not.toBeInTheDocument();
+    expect(container.querySelector(".sprite-loader-fallback")).toBeInTheDocument();
+    expect(container.querySelector(".sprite-loader-fallback")).toHaveAttribute(
+      "data-sprite-load-error",
+      expect.stringContaining("Unexpected sprites response")
+    );
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "Failed to load sprite definitions:",
+      expect.stringContaining("Failed to load sprite definitions from"),
+      expect.any(Error)
+    );
+  });
+
+  it("handles fetch failures with fallback diagnostics", async () => {
+    fetchMock.mockRejectedValue(new TypeError("Network unavailable"));
+
+    const { container } = render(SpriteLoader);
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(container.querySelector(".sprite-loader svg")).not.toBeInTheDocument();
+    expect(container.querySelector(".sprite-loader-fallback")).toBeInTheDocument();
+    expect(container.querySelector(".sprite-loader-fallback")).toHaveAttribute(
+      "data-sprite-load-error",
+      expect.stringContaining("Network unavailable")
+    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to load sprite definitions from"),
       expect.any(Error)
     );
   });

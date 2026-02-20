@@ -7,6 +7,7 @@
   const URL_ATTRIBUTES = new Set(["href", "xlink:href"]);
 
   let spriteContent = "";
+  let spriteLoadError = "";
 
   function sanitizeSvgNode(node: Element): void {
     const tagName = node.tagName.toLowerCase();
@@ -65,9 +66,12 @@
       sanitizedSpriteRoot.setAttribute("aria-hidden", "true");
       sanitizedSpriteRoot.setAttribute("focusable", "false");
       spriteContent = new XMLSerializer().serializeToString(sanitizedSpriteRoot);
+      spriteLoadError = "";
     } catch (error) {
       spriteContent = "";
-      console.error("Failed to load sprite definitions:", error);
+      const diagnostic = error instanceof Error ? error.message : String(error);
+      spriteLoadError = diagnostic;
+      console.error(`Failed to load sprite definitions from ${spritesUrl}: ${diagnostic}`, error);
     }
   }
 
@@ -87,6 +91,12 @@
   </div>
 {/if}
 
+{#if spriteLoadError}
+  <p class="sprite-loader-fallback" role="status" aria-live="polite" data-sprite-load-error={spriteLoadError}>
+    Sprite icons failed to load. Check browser console for diagnostics.
+  </p>
+{/if}
+
 <style>
   .sprite-loader {
     position: absolute;
@@ -94,5 +104,20 @@
     height: 0;
     overflow: hidden;
     pointer-events: none;
+  }
+
+  .sprite-loader-fallback {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    margin: 0;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    border: 1px solid #f4b400;
+    background: #fff7e0;
+    color: #663c00;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    z-index: 2000;
   }
 </style>
