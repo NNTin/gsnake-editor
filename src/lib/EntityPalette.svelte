@@ -16,10 +16,37 @@
   let selectedEntity: EntityType = 'snake';
 
   const dispatch = createEventDispatcher<{ select: EntityType }>();
+  const SVG_NS = 'http://www.w3.org/2000/svg';
 
   function selectEntity(entityType: EntityType) {
     selectedEntity = entityType;
     dispatch('select', entityType);
+  }
+
+  function createDragImage(spriteId: string): HTMLDivElement {
+    const dragImage = document.createElement('div');
+    dragImage.style.width = '32px';
+    dragImage.style.height = '32px';
+    dragImage.style.backgroundColor = '#ffffff';
+    dragImage.style.borderRadius = '6px';
+    dragImage.style.padding = '2px';
+    dragImage.style.border = '1px solid #ddd';
+    dragImage.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 32 32');
+    svg.setAttribute('width', '28');
+    svg.setAttribute('height', '28');
+
+    const use = document.createElementNS(SVG_NS, 'use');
+    use.setAttribute('href', `#${spriteId}`);
+    svg.appendChild(use);
+
+    dragImage.appendChild(svg);
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+
+    return dragImage;
   }
 
   function handleDragStart(event: DragEvent, entityType: EntityType) {
@@ -30,22 +57,12 @@
       // Create a custom drag image with the entity sprite
       const entity = entities.find(e => e.type === entityType);
       if (entity) {
-        const dragImage = document.createElement('div');
-        dragImage.style.width = '32px';
-        dragImage.style.height = '32px';
-        dragImage.style.backgroundColor = '#ffffff';
-        dragImage.style.borderRadius = '6px';
-        dragImage.style.padding = '2px';
-        dragImage.style.border = '1px solid #ddd';
-        dragImage.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-        dragImage.innerHTML = `<svg viewBox="0 0 32 32" width="28" height="28"><use href="#${entity.spriteId}"></use></svg>`;
-        dragImage.style.position = 'absolute';
-        dragImage.style.top = '-1000px';
+        const dragImage = createDragImage(entity.spriteId);
         document.body.appendChild(dragImage);
         event.dataTransfer.setDragImage(dragImage, 16, 16);
 
         // Clean up the drag image after drag operation
-        setTimeout(() => document.body.removeChild(dragImage), 0);
+        setTimeout(() => dragImage.remove(), 0);
       }
     }
   }
