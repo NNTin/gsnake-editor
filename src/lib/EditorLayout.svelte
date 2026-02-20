@@ -751,6 +751,10 @@
       style: 'background: #d4edda; color: #155724; border-left: 4px solid #4caf50; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
     });
 
+    // Clear undo/redo history after export — the level is saved, no unsaved changes remain.
+    undoStack = [];
+    redoStack = [];
+
     console.log('Exported level:', name, difficulty);
     showSaveModal = false;
   }

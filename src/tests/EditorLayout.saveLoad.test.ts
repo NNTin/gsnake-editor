@@ -171,6 +171,52 @@ describe("EditorLayout save/load workflow", () => {
     expect(screen.queryByRole("heading", { name: "Save Level" })).not.toBeInTheDocument();
   });
 
+  it("clears undo history after export so New Level does not prompt for confirmation", async () => {
+    const onNewLevel = vi.fn();
+    const { container } = render(EditorLayout, {
+      props: {
+        gridWidth: 5,
+        gridHeight: 5,
+        initialLevelData: null,
+      },
+      events: { newLevel: onNewLevel },
+    });
+
+    // Place entities to build up the undo stack.
+    await fireEvent.click(getGridCell(container, 0, 0));
+    await fireEvent.click(screen.getByRole("button", { name: "Food" }));
+    await fireEvent.click(getGridCell(container, 0, 1));
+    await fireEvent.click(screen.getByRole("button", { name: "Exit" }));
+    await fireEvent.click(getGridCell(container, 0, 2));
+
+    // Undo button should be enabled (stack is non-empty).
+    expect(screen.getByRole("button", { name: "Undo" })).not.toBeDisabled();
+
+    // Export the level.
+    await fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByRole("heading", { name: "Save Level" })).toBeInTheDocument();
+    await fireEvent.input(screen.getByLabelText("Level Name"), {
+      target: { value: "Test Level" },
+    });
+    await fireEvent.change(screen.getByLabelText("Difficulty"), {
+      target: { value: "easy" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "Export" }));
+    await waitFor(() => {
+      expect(createObjectURLMock).toHaveBeenCalled();
+    });
+
+    // After export, undo stack must be cleared — Undo button disabled.
+    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
+
+    // Clicking New Level should dispatch newLevel without any confirm dialog.
+    const confirmSpy = vi.spyOn(window, "confirm");
+    await fireEvent.click(screen.getByRole("button", { name: "New Level" }));
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(onNewLevel).toHaveBeenCalledTimes(1);
+    confirmSpy.mockRestore();
+  });
+
   it("does not show no-food warning when only floating food is placed", async () => {
     const { container } = render(EditorLayout, {
       gridWidth: 5,
