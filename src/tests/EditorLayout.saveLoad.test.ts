@@ -44,6 +44,17 @@ function getGridCell(container: HTMLElement, row: number, col: number): HTMLElem
   return cell;
 }
 
+function expectCellSprite(
+  container: HTMLElement,
+  row: number,
+  col: number,
+  expectedSpriteId: string
+): void {
+  const spriteUse = getGridCell(container, row, col).querySelector(".cell-sprite use");
+  expect(spriteUse).toBeInTheDocument();
+  expect(spriteUse).toHaveAttribute("href", expect.stringContaining(`#${expectedSpriteId}`));
+}
+
 async function loadLevelFromFile(contents: string, filename: string): Promise<void> {
   await fireEvent.click(screen.getByRole("button", { name: "Load" }));
 
@@ -222,9 +233,13 @@ describe("EditorLayout save/load workflow", () => {
     expect(getGridCell(container, 1, 1)).toHaveTextContent("H");
     expect(getGridCell(container, 2, 1)).toHaveClass("is-snake-segment");
     expect(getGridCell(container, 2, 1)).toHaveTextContent("1");
-    expect(getGridCell(container, 0, 0)).toHaveClass("has-entity");
-    expect(getGridCell(container, 4, 3)).toHaveClass("has-entity");
-    expect(getGridCell(container, 5, 4)).toHaveClass("has-entity");
+    expectCellSprite(container, 0, 0, "Obstacle");
+    expectCellSprite(container, 4, 3, "Food");
+    expectCellSprite(container, 5, 4, "Exit");
+    expectCellSprite(container, 0, 2, "FloatingFood");
+    expectCellSprite(container, 0, 4, "FallingFood");
+    expectCellSprite(container, 5, 0, "Stone");
+    expectCellSprite(container, 2, 2, "Spike");
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
@@ -296,8 +311,8 @@ describe("EditorLayout save/load workflow", () => {
     expect(getGridCell(container, 6, 4)).toHaveClass("is-snake-segment");
     expect(getGridCell(container, 3, 1)).toHaveClass("has-entity");
     expect(getGridCell(container, 6, 0)).toHaveClass("has-entity");
-    expect(getGridCell(container, 0, 2)).toHaveClass("has-entity");
-    expect(getGridCell(container, 0, 4)).toHaveClass("has-entity");
+    expectCellSprite(container, 0, 2, "Stone");
+    expectCellSprite(container, 0, 4, "Spike");
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
