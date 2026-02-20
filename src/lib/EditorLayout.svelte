@@ -517,9 +517,19 @@
     input.addEventListener('cancel', handleInputCancel);
     window.addEventListener('focus', handleWindowFocus);
 
-    // Add to DOM and trigger click
-    document.body.appendChild(input);
-    input.click();
+    // Add to DOM and trigger click. Ensure failures still clean up transient DOM/listeners.
+    try {
+      document.body.appendChild(input);
+      input.click();
+    } catch (error) {
+      cleanupInput();
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to open file picker: ${message}. Please try again.`, {
+        duration: 5000,
+        style: 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
+      });
+      console.error('Failed to open file picker:', error);
+    }
   }
 
   function handleUndo() {

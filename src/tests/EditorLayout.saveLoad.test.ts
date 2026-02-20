@@ -361,6 +361,37 @@ describe("EditorLayout save/load workflow", () => {
     expect(toastMock.error).not.toHaveBeenCalled();
   });
 
+  it("cleans up hidden file input when file picker launch throws", async () => {
+    const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(function (
+      this: HTMLInputElement
+    ) {
+      if (this.type === "file") {
+        throw new Error("picker blocked");
+      }
+    });
+
+    try {
+      render(EditorLayout, {
+        gridWidth: 6,
+        gridHeight: 6,
+        initialLevelData: null,
+      });
+
+      await fireEvent.click(screen.getByRole("button", { name: "Load" }));
+
+      await waitFor(() => {
+        expect(document.body.querySelector('input[type="file"]')).toBeNull();
+      });
+
+      expect(toastMock.error).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to open file picker: picker blocked."),
+        expect.any(Object)
+      );
+    } finally {
+      clickSpy.mockRestore();
+    }
+  });
+
   it("posts a canonical export payload when testing a level", async () => {
     vi.stubEnv("VITE_GSNAKE_API_URL", "");
 
