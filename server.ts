@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import { validateLevelPayload } from "./src/server/levelDefinitionValidator";
 
 const app = express();
@@ -138,15 +140,22 @@ function resetTestLevelForTests(): void {
   testLevel = null;
 }
 
+function isMainModule(moduleUrl: string, entryPath = process.argv[1]): boolean {
+  if (!entryPath) {
+    return false;
+  }
+
+  const normalizedModulePath = path.resolve(fileURLToPath(moduleUrl));
+  const normalizedEntryPath = path.resolve(entryPath);
+
+  return normalizedModulePath === normalizedEntryPath;
+}
+
 // Export app for testing
-export { app, resetTestLevelForTests, resolveAllowedCorsOrigins };
+export { app, resetTestLevelForTests, resolveAllowedCorsOrigins, isMainModule };
 
 // Start the server only when run directly (not when imported for testing)
-// Check if this module is the main entry point
-const isMainModule =
-  import.meta.url.endsWith(process.argv[1]) || import.meta.url === `file://${process.argv[1]}`;
-
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   // Bind without an explicit host so localhost resolves on both IPv4 and IPv6.
   app.listen(PORT, () => {
     console.log(`Test level server running on http://localhost:${PORT}`);

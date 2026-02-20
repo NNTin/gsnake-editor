@@ -1,7 +1,9 @@
 // @vitest-environment node
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
-import { app, resetTestLevelForTests, resolveAllowedCorsOrigins } from "../../server";
+import path from "path";
+import { pathToFileURL } from "url";
+import { app, isMainModule, resetTestLevelForTests, resolveAllowedCorsOrigins } from "../../server";
 
 describe("Server API tests", () => {
   const originalAllowedCorsOrigins = process.env.GSNAKE_EDITOR_ALLOWED_ORIGINS;
@@ -82,6 +84,38 @@ describe("Server API tests", () => {
         "http://localhost:4321",
         "http://127.0.0.1:4321",
       ]);
+    });
+  });
+
+  describe("isMainModule", () => {
+    it("should return true when module path and entry path match", () => {
+      const entryPath = path.resolve(process.cwd(), "server.ts");
+      const moduleUrl = pathToFileURL(entryPath).toString();
+
+      expect(isMainModule(moduleUrl, entryPath)).toBe(true);
+    });
+
+    it("should return true when entry path is relative", () => {
+      const entryPath = path.resolve(process.cwd(), "server.ts");
+      const moduleUrl = pathToFileURL(entryPath).toString();
+      const relativeEntryPath = path.relative(process.cwd(), entryPath);
+
+      expect(isMainModule(moduleUrl, relativeEntryPath)).toBe(true);
+    });
+
+    it("should return false when entry path is missing", () => {
+      const entryPath = path.resolve(process.cwd(), "server.ts");
+      const moduleUrl = pathToFileURL(entryPath).toString();
+
+      expect(isMainModule(moduleUrl, undefined)).toBe(false);
+    });
+
+    it("should return false when module path and entry path differ", () => {
+      const entryPath = path.resolve(process.cwd(), "server.ts");
+      const moduleUrl = pathToFileURL(entryPath).toString();
+      const differentEntryPath = path.resolve(process.cwd(), "src", "tests", "server.test.ts");
+
+      expect(isMainModule(moduleUrl, differentEntryPath)).toBe(false);
     });
   });
 
