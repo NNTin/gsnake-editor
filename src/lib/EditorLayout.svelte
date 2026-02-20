@@ -32,6 +32,8 @@
   const DEFAULT_SNAKE_DIRECTION: Direction = 'east';
   const DEFAULT_TEST_API_BASE_URL = 'http://localhost:3001';
   const TEST_LEVEL_API_PATH = '/api/test-level';
+  const NEW_LEVEL_CONFIRMATION_MESSAGE =
+    'You have unsaved changes. Create a new level and discard your current edits?';
 
   function createEmptyGrid(width: number, height: number): GridCell[][] {
     return Array.from({ length: height }, (_, row) =>
@@ -432,6 +434,12 @@
   }
 
   function handleNewLevel() {
+    const hasUnsavedChanges = undoStack.length > 0;
+    if (hasUnsavedChanges && !window.confirm(NEW_LEVEL_CONFIRMATION_MESSAGE)) {
+      console.log('New level canceled - keeping current editor state');
+      return;
+    }
+
     console.log('New Level clicked - returning to landing page');
     dispatch('newLevel');
   }

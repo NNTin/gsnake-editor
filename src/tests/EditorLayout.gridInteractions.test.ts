@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import "@testing-library/jest-dom";
 import EditorLayout from "../lib/EditorLayout.svelte";
@@ -153,6 +153,36 @@ describe("EditorLayout grid interactions", () => {
     expect(getGridCell(container, 0, 1)).toHaveClass("is-snake-segment");
     expect(getGridCell(container, 0, 1)).toHaveTextContent("1");
     expect(container.querySelectorAll(".cell.is-snake-segment")).toHaveLength(2);
+  });
+
+  it("prompts before leaving to a new level when unsaved edits exist and preserves state on cancel", async () => {
+    const onNewLevel = vi.fn();
+    const { container } = render(EditorLayout, {
+      props: {
+        gridWidth: 5,
+        gridHeight: 5,
+        initialLevelData: null,
+      },
+      events: {
+        newLevel: onNewLevel,
+      },
+    });
+
+    const editedCell = getGridCell(container, 0, 0);
+    await fireEvent.click(editedCell);
+    expect(editedCell).toHaveClass("is-snake-segment");
+
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    try {
+      await fireEvent.click(screen.getByRole("button", { name: "New Level" }));
+
+      expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining("unsaved changes"));
+      expect(onNewLevel).not.toHaveBeenCalled();
+      expect(editedCell).toHaveClass("is-snake-segment");
+    } finally {
+      confirmSpy.mockRestore();
+    }
   });
 
   it("resets direction to east when edits clear all snake segments before redraw", async () => {
