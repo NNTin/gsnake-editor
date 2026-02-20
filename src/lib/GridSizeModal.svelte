@@ -17,8 +17,8 @@
 
   function handleCreate() {
     // Validate inputs
-    if (width < 5 || width > 50 || height < 5 || height > 50) {
-      toast.error('Width and height must be between 5 and 50', {
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 5 || width > 50 || height < 5 || height > 50) {
+      toast.error('Width and height must be whole numbers between 5 and 50', {
         duration: 5000,
         style: 'background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);'
       });
@@ -41,6 +41,7 @@
       bind:value={width}
       min="5"
       max="50"
+      step="1"
       required
     />
   </div>
@@ -53,6 +54,7 @@
       bind:value={height}
       min="5"
       max="50"
+      step="1"
       required
     />
   </div>
