@@ -11,6 +11,26 @@ export interface LevelValidationDetail {
   message: string;
 }
 
+interface Position {
+  x: number;
+  y: number;
+}
+
+interface LevelPayloadForBoundsValidation {
+  gridSize: {
+    width: number;
+    height: number;
+  };
+  snake: Position[];
+  obstacles: Position[];
+  food: Position[];
+  exit: Position;
+  floatingFood?: Position[];
+  fallingFood?: Position[];
+  stones?: Position[];
+  spikes?: Position[];
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..", "..");
@@ -68,15 +88,59 @@ function buildFieldPath(error: ErrorObject): string {
   return basePath.length > 0 ? basePath : "$";
 }
 
-export function validateLevelPayload(payload: unknown): LevelValidationDetail[] {
-  const isValid = validateLevelDefinition(payload);
-  if (isValid) {
-    return [];
+function validateCoordinateBounds(
+  payload: LevelPayloadForBoundsValidation
+): LevelValidationDetail[] {
+  const {
+    gridSize: { width, height },
+  } = payload;
+  const boundsErrors: LevelValidationDetail[] = [];
+
+  function validatePosition(position: Position, fieldPrefix: string): void {
+    if (position.x >= width) {
+      boundsErrors.push({
+        field: `${fieldPrefix}.x`,
+        keyword: "maximum",
+        message: `must be less than gridSize.width (${width})`,
+      });
+    }
+
+    if (position.y >= height) {
+      boundsErrors.push({
+        field: `${fieldPrefix}.y`,
+        keyword: "maximum",
+        message: `must be less than gridSize.height (${height})`,
+      });
+    }
   }
 
-  return (validateLevelDefinition.errors ?? []).map((error) => ({
-    field: buildFieldPath(error),
-    keyword: error.keyword,
-    message: error.message ?? "failed schema validation",
-  }));
+  function validatePositionArray(fieldName: string, positions: Position[]): void {
+    positions.forEach((position, index) => {
+      validatePosition(position, `${fieldName}.${index}`);
+    });
+  }
+
+  validatePositionArray("snake", payload.snake);
+  validatePositionArray("obstacles", payload.obstacles);
+  validatePositionArray("food", payload.food);
+  validatePosition(payload.exit, "exit");
+  validatePositionArray("floatingFood", payload.floatingFood ?? []);
+  validatePositionArray("fallingFood", payload.fallingFood ?? []);
+  validatePositionArray("stones", payload.stones ?? []);
+  validatePositionArray("spikes", payload.spikes ?? []);
+
+  return boundsErrors;
+}
+
+export function validateLevelPayload(payload: unknown): LevelValidationDetail[] {
+  const isValid = validateLevelDefinition(payload);
+  if (!isValid) {
+    return (validateLevelDefinition.errors ?? []).map((error) => ({
+      field: buildFieldPath(error),
+      keyword: error.keyword,
+      message: error.message ?? "failed schema validation",
+    }));
+  }
+
+  return validateCoordinateBounds(payload as LevelPayloadForBoundsValidation);
 }

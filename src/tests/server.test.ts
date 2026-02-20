@@ -173,7 +173,7 @@ describe("Server API tests", () => {
       );
     });
 
-    it("should accept negative coordinates that satisfy schema integer constraints", async () => {
+    it("should reject negative coordinates with structured minimum errors", async () => {
       const payloadWithNegativeCoordinates = {
         ...validLevelData,
         snake: [{ x: -1, y: -2 }],
@@ -181,10 +181,70 @@ describe("Server API tests", () => {
         exit: { x: -4, y: 9 },
       };
 
-      await request(app).post("/api/test-level").send(payloadWithNegativeCoordinates).expect(200);
+      const response = await request(app)
+        .post("/api/test-level")
+        .send(payloadWithNegativeCoordinates)
+        .expect(400);
 
-      const response = await request(app).get("/api/test-level").expect(200);
-      expect(response.body).toEqual(payloadWithNegativeCoordinates);
+      expect(response.body).toMatchObject({
+        error: "Invalid level payload",
+      });
+      expect(response.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "snake.0.x",
+            keyword: "minimum",
+          }),
+          expect.objectContaining({
+            field: "snake.0.y",
+            keyword: "minimum",
+          }),
+          expect.objectContaining({
+            field: "food.0.x",
+            keyword: "minimum",
+          }),
+          expect.objectContaining({
+            field: "exit.x",
+            keyword: "minimum",
+          }),
+        ])
+      );
+    });
+
+    it("should reject coordinates outside grid bounds with structured maximum errors", async () => {
+      const response = await request(app)
+        .post("/api/test-level")
+        .send({
+          ...validLevelData,
+          snake: [{ x: 10, y: 2 }],
+          obstacles: [{ x: 5, y: 10 }],
+          exit: { x: 11, y: 10 },
+        })
+        .expect(400);
+
+      expect(response.body).toMatchObject({
+        error: "Invalid level payload",
+      });
+      expect(response.body.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "snake.0.x",
+            keyword: "maximum",
+          }),
+          expect.objectContaining({
+            field: "obstacles.0.y",
+            keyword: "maximum",
+          }),
+          expect.objectContaining({
+            field: "exit.x",
+            keyword: "maximum",
+          }),
+          expect.objectContaining({
+            field: "exit.y",
+            keyword: "maximum",
+          }),
+        ])
+      );
     });
 
     it("should reject invalid coordinate types with structured coordinate field details", async () => {
