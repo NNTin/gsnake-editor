@@ -61,16 +61,24 @@ app.get("/health", (_req, res) => {
   res.status(200).json(API_HEALTH_RESPONSE);
 });
 
-// In-memory storage for test level
+// In-memory storage for test levels, keyed by run ID
 interface StoredLevel {
   data: unknown;
   timestamp: number;
 }
 
-let testLevel: StoredLevel | null = null;
+const testLevels = new Map<string, StoredLevel>();
 
 // Expiration time: 1 hour in milliseconds
 const EXPIRATION_TIME = 60 * 60 * 1000;
+
+const DEFAULT_RUN_ID = "default";
+
+// Extract the run ID from query params (defaults to "default")
+function resolveRunId(query: Record<string, unknown>): string {
+  const run = query["run"];
+  return typeof run === "string" && run.trim() ? run.trim() : DEFAULT_RUN_ID;
+}
 
 // Helper function to check if level has expired
 function isLevelExpired(level: StoredLevel): boolean {
@@ -90,25 +98,30 @@ app.post("/api/test-level", (req, res) => {
     });
   }
 
-  // Store the level with current timestamp
-  testLevel = {
+  const runId = resolveRunId(req.query as Record<string, unknown>);
+
+  // Store the level with current timestamp, keyed by run ID
+  testLevels.set(runId, {
     data: req.body,
     timestamp: Date.now(),
-  };
+  });
 
-  console.log("Test level stored successfully");
+  console.log(`Test level stored successfully (run: ${runId})`);
   res.json({ success: true, message: "Test level stored successfully" });
 });
 
 // GET /api/test-level - Retrieve the stored test level
 app.get("/api/test-level", (req, res) => {
+  const runId = resolveRunId(req.query as Record<string, unknown>);
+  const testLevel = testLevels.get(runId) ?? null;
+
   if (!testLevel) {
     return res.status(404).json({ error: "No test level available" });
   }
 
   // Check if level has expired
   if (isLevelExpired(testLevel)) {
-    testLevel = null;
+    testLevels.delete(runId);
     return res.status(404).json({ error: "Test level has expired" });
   }
 
@@ -137,7 +150,7 @@ app.use(
 );
 
 function resetTestLevelForTests(): void {
-  testLevel = null;
+  testLevels.clear();
 }
 
 function isMainModule(moduleUrl: string, entryPath = process.argv[1]): boolean {
