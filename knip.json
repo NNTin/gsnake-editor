@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["src/main.ts", "server.ts", "vitest.config.ts"],
+  "project": ["src/**/*.{ts,svelte}", "server.ts", "!src/tests/**"],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/coverage/**", "vendor/**"]
+}

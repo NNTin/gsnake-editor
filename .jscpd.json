@@ -1,0 +1,9 @@
+{
+  "path": ["src/"],
+  "pattern": "**/*.{ts,svelte}",
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/coverage/**", "**/tests/**", "**/*.test.ts"],
+  "minTokens": 50,
+  "minLines": 5,
+  "reporters": ["json"],
+  "output": "jscpd-report"
+}
